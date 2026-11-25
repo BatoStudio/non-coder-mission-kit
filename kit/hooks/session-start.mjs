@@ -11,11 +11,17 @@ import { resolve, join } from 'node:path';
 
 import { deferToOtherKit } from '../lib.mjs';
 if (deferToOtherKit()) process.exit(0); // bản kit khác ($MISSION_KIT) đang lo việc này
+// Bản cài tiếng Anh (install.mjs --lang en): thông báo của hook/CLI vẫn bằng tiếng Việt → dặn Claude nói với chủ dự án bằng tiếng Anh
+let EN_NOTE = '';
+try {
+  if (JSON.parse(readFileSync(new URL('../installed.json', import.meta.url), 'utf8').replace(/^﻿/, '')).lang === 'en')
+    EN_NOTE = "Kit language: English. Always talk to the project owner in English. The kit's hook and CLI messages are written in Vietnamese: read them, then explain them to the owner in plain English (never paste them untranslated).";
+} catch {}
 const input = await readStdin();
 const root = findRoot(input.cwd);
 if (!root) {
   // kit đã cài nhưng app chưa khởi tạo: nói rõ kit ở đâu để Claude khỏi đi tìm
-  if (process.env.MISSION_KIT) out({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: 'Mission Kit đã cài, app chưa khởi tạo (.mission/ chưa có). CLI: node "$MISSION_KIT/mission.mjs" (biến đã có sẵn, không cần đi tìm kit). Bắt đầu bằng /mission-init.' } });
+  if (process.env.MISSION_KIT || EN_NOTE) out({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: (EN_NOTE ? EN_NOTE + '\n' : '') + 'Mission Kit đã cài, app chưa khởi tạo (.mission/ chưa có). CLI: node "$MISSION_KIT/mission.mjs" (biến đã có sẵn, không cần đi tìm kit). Bắt đầu bằng /mission-init.' } });
   process.exit(0);
 }
 const { cfg, error } = loadConfigSafe(root);
@@ -43,8 +49,9 @@ try {
 // Quyền tự quyết: một nguồn duy nhất là mục «Tự quyết và khi nào hỏi» trong templates/QUY-TRINH.md
 try {
   const qt = readFileSync(new URL('../templates/QUY-TRINH.md', import.meta.url), 'utf8');
-  const sec = qt.match(/^## Tự quyết và khi nào hỏi\r?\n([\s\S]*?)(?=^## )/m);
-  if (sec) lines.push('', '## Tự quyết và khi nào hỏi (chủ dự án cho phép thường trực)', sec[1].trim());
+  const sec = qt.match(/^## (Tự quyết và khi nào hỏi|Autonomy and when to ask)\r?\n([\s\S]*?)(?=^## )/m);
+  if (sec) lines.push('', sec[1].startsWith('Autonomy') ? '## Autonomy and when to ask (standing permission from the project owner)' : '## Tự quyết và khi nào hỏi (chủ dự án cho phép thường trực)', sec[2].trim());
 } catch {}
+if (EN_NOTE) lines.push('', EN_NOTE);
 lines.push('', 'Quy trình: skill «mission-run». CLI: node "$MISSION_KIT/mission.mjs" <status|ledger|gate|check|report|done>.');
 out({ hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: lines.join('\n') } });

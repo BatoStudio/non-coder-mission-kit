@@ -9,7 +9,7 @@ A reusable way of building apps with Claude Code, made for people who are not pr
 - 7 automatic hooks, including a protection layer for client data and secret files.
 - A tool that keeps a defect ledger and quality gates.
 
-> **Language note.** The kit's instructions, messages and reports are written in **Vietnamese**, so by default Claude reports in Vietnamese. To work in English, add one line to your app's `CLAUDE.md`: `Always reply to me in English.` The hooks' own messages (the reasons they block or ask) stay in Vietnamese, but Claude can explain them. Some command arguments are Vietnamese words; their meaning is shown in the tables below.
+> **Language.** The kit comes in two languages: Vietnamese (the default) and **English**. Add `--lang en` when you install (step 3 below) to get the English skills, agents, commands and templates; Claude then talks to you in English. Names stay the same in both versions (`/mission-init`, `ba-chuyen-gia`…). The safety hooks and the `mission.mjs` tool still print their messages in Vietnamese: the English install tells Claude to read them and explain them to you in English. Reinstalling without `--lang` keeps the language you chose last time. To switch back to Vietnamese: `node install.mjs --lang vi --project "D:\APPS\MY APP"`. Files the kit already wrote in your app's `.mission/` folder (plan, LT, HANDOVER) stay in the language they were written in. On a new computer the kit is not committed, so always add `--lang en` when you reinstall.
 
 **The kit does not replace what you already have.** Your app's own hooks, skills and agents keep working as before. Everything in the kit starts with `mission-`, so it never overwrites anything of your app's. The kit does nothing in an app until you run `/mission-init` there.
 
@@ -24,7 +24,7 @@ There are two ways to use it:
 
 ## Light way (2 minutes)
 
-1. Copy `kit/templates/QUY-TRINH.md` into `D:\APPS\`.
+1. Copy `kit-en/templates/QUY-TRINH.md` (English) or `kit/templates/QUY-TRINH.md` (Vietnamese) into `D:\APPS\`.
 2. Add one line at the top of your app's `CLAUDE.md`: `@../QUY-TRINH.md`
 3. The first time you open the app, Claude Code may ask whether it may read a file outside the app folder. Say yes.
 
@@ -61,10 +61,10 @@ There are two ways to use it:
 3. Type these commands one by one. Change the app name to yours, and keep the quotes if the path has spaces:
    ```powershell
    cd "D:\APPS\_tools\non-coder-mission-kit"
-   node install.mjs --project "D:\APPS\MY APP" --dry-run   # preview only, writes nothing
-   node install.mjs --project "D:\APPS\MY APP"             # real install
+   node install.mjs --lang en --project "D:\APPS\MY APP" --dry-run   # preview only, writes nothing
+   node install.mjs --lang en --project "D:\APPS\MY APP"             # real install (English version)
    ```
-   When it finishes you will see the line `Xong (một app: …)` ("Done, one app: …"). What the installer changes in your app:
+   When it finishes you will see the line `Done (one app: …). Kit language: English.` What the installer changes in your app:
    - **Hooks** go into `.claude/settings.local.json`, which applies to this computer only.
    - **Model settings:** it adds exactly two keys to the app's `.claude/settings.json`, `"model": "sonnet"` and `"advisorModel": "fable"`. Claude then works with Sonnet and asks Fable for advice. If the app already set other values, the installer **keeps them and tells you**. If your Claude plan has no Fable, change `advisorModel` (for example to `opus`) or delete that key. Uninstalling removes only the keys the kit wrote.
    - **`.gitignore`:** it adds a block of lines so the kit's copy is never committed. Commit that change once.
@@ -74,7 +74,7 @@ There are two ways to use it:
    **Try it on a side app first** for 1–2 weeks, then install it on your main app.
 4. Open Claude Code in the app folder. In PowerShell type `cd "D:\APPS\MY APP"`, then `claude`, or open that folder in the Claude app. Type `/mission-status`. If it says to run `/mission-init`, the kit is installed correctly.
 5. **Talk your idea through with ChatGPT to write a brief.** The installer prints these steps at the end. In short:
-   - Get the prompt: run `node install.mjs --brief-prompt` in the kit folder. The prompt is printed and **already copied to the clipboard**. Or open `kit/templates/HUONG-DAN-BRIEF-CHATGPT.md` and copy the block «Prompt dán vào ChatGPT».
+   - Get the prompt: run `node install.mjs --lang en --brief-prompt` in the kit folder. The English prompt is printed and **already copied to the clipboard**. Or open `kit-en/templates/HUONG-DAN-BRIEF-CHATGPT.md` and copy the block «Prompt to paste into ChatGPT».
    - Open ChatGPT, start a new chat, paste the prompt (Ctrl+V), then describe your app idea in plain words. ChatGPT asks back in groups, at most 5 questions at a time. If you don't know an answer, just say so.
    - When ChatGPT outputs the brief (one markdown block, 15 sections), press Copy and paste it into Notepad. **Save it as `brief.md` in the app folder.** In "Save as type" choose *All files* and set Encoding to *UTF-8*, so it doesn't become `brief.md.txt`.
    - Don't want to use ChatGPT? Type `/mission-brief` in Claude Code and Claude asks the questions and writes `brief.md` itself.
@@ -85,7 +85,7 @@ There are two ways to use it:
 
 **Uninstall:** `node install.mjs --uninstall --project "D:\APPS\MY APP"`. This removes only the files the kit installed. It returns `settings.json`, `settings.local.json` and `.gitignore` to **exactly the bytes** they had before the install. If you edited those files after installing, it removes only the kit's part and keeps your edits. The `.mission/` folder is kept.
 
-**Install for the whole computer:** do this only after it has worked well on 1–2 apps. Command: `node install.mjs --global`. Note: the descriptions of the 20 auto-loading skills, 8 agents and 11 commands (about 3 thousand tokens) are then loaded in **every** Claude Code session, even in apps that don't use the kit. If an app has both the global copy and its own copy, the hooks run only once (the app's copy), but skills and commands appear twice. Pick one.
+**Install for the whole computer:** do this only after it has worked well on 1–2 apps. Command: `node install.mjs --lang en --global`. Note: the descriptions of the 20 auto-loading skills, 8 agents and 11 commands (about 3 thousand tokens) are then loaded in **every** Claude Code session, even in apps that don't use the kit. If an app has both the global copy and its own copy, the hooks run only once (the app's copy), but skills and commands appear twice. Pick one.
 
 To run automatic UI tests (`web-smoke`), install once in each web app: `npm.cmd i -D playwright`, then `npx.cmd playwright install chromium`. In PowerShell, type `npm.cmd`/`npx.cmd` to avoid the error «npm.ps1 cannot be loaded».
 
@@ -99,7 +99,7 @@ To run automatic UI tests (`web-smoke`), install once in each web app: `npm.cmd 
 | `/mission-sync [full\|no-site]` | A quick, read-only check, answered in 3 lines: uncommitted work, branches not yet on GitHub, whether the repo is still private, which commit the live site runs and how many commits are not deployed yet |
 | `/mission-next [n]` | Works through the highest-priority batches until done or until it needs your decision |
 | `/mission-review <unit> [nhanh\|full]` | Runs `ba-chuyen-gia` by default (3 experts in parallel); `nhanh` ("quick") = 1 subagent; at most 3 rounds |
-| `/mission-tidy [đo\|kế hoạch\|làm <batch>\|kết thúc]` | Code clean-up. `đo` ("measure") finds duplicated code, clashing names, and long files or functions. `kế hoạch` ("plan") has 3 experts plan it. `làm` ("do") works one small batch, and regression results must match exactly. `kết thúc` ("finish") shows a before/after table |
+| `/mission-tidy [measure\|plan\|do <batch>\|finish]` | Code clean-up. `measure` finds duplicated code, clashing names, and long files or functions. `plan` has 3 experts plan it. `do` works one small batch, and regression results must match exactly. `finish` shows a before/after table. The Vietnamese words `đo`, `kế hoạch`, `làm`, `kết thúc` also work |
 | `/mission-fix <L-xxxx\|description>` | Fixes a defect in 10 steps, with a corrective action, and scans for the same mistake elsewhere |
 | `/mission-options <problem>` | Options → Compare → Check → Critique → Decide |
 | `/mission-verify` | Checks before a commit, and re-checks every "done" claim |
@@ -249,7 +249,7 @@ It **never touches source code**: the script refuses if it sees files tracked by
 ## Known limitations
 
 - **Old-style Cloudflare tokens (40 characters, no `cfut_` prefix):** the `bi-mat-cloudflare` pattern is only in the new config. Apps installed earlier must add this pattern to `.mission/config.json` themselves (section `lint.rules`, copied from `kit/templates/config.template.json`).
-- **Feature map and name-clash checks:** the after-edit hook arrives as soon as you reinstall the kit (`node install.mjs --project "<app folder>"`). Only newly initialised apps get the `tidy --conflicts` step in `checks.full` and the «Tính năng» (Features) section of `.mission/LT.md`. Apps installed earlier must add that step to `checks.full` themselves (copy it from `kit/templates/config.template.json`) and add the section to `LT.md` (copy it from `kit/templates/LT.template.md`). An app that already has clashing names will show red at this step in `check --full`: log it in the ledger, then clean up with `/mission-tidy`.
+- **Feature map and name-clash checks:** the after-edit hook arrives as soon as you reinstall the kit (`node install.mjs --lang en --project "<app folder>"` for the English version). Only newly initialised apps get the `tidy --conflicts` step in `checks.full` and the «Tính năng» (Features) section of `.mission/LT.md`. Apps installed earlier must add that step to `checks.full` themselves (copy it from `kit/templates/config.template.json`) and add the section to `LT.md` (copy it from `kit/templates/LT.template.md`). An app that already has clashing names will show red at this step in `check --full`: log it in the ledger, then clean up with `/mission-tidy`.
 - **The case «H1: tệp có \ trong tên» (a file with `\` in its name) is skipped on Windows**, because Windows doesn't allow `\` in file names.
 - **A hard link to `.env` cannot be detected by its path.** A hard link is another name for the same data, with no "real" path to compare, so the read hook cannot recognise it. Symlinks and junctions are checked by their real target.
 - **The kit has been used for real on only a few apps, on Windows.** The full test suite passes on Windows with Git Bash, including a test install and uninstall (after uninstalling, hooks and permissions are identical to the original). Try it on a side app first.

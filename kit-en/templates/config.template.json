@@ -1,0 +1,295 @@
+{
+  "name": "ten-app",
+  "mainBranch": "main",
+  "protectedBranches": [
+    "main",
+    "master"
+  ],
+  "workBranchPrefix": "work/",
+  "git": {
+    "mode": "local-main"
+  },
+  "deliverables": [
+    {
+      "path": "index.html",
+      "description": "The working app (edit to fit the project)"
+    }
+  ],
+  "protect": {
+    "deny": [
+      "samples/**",
+      "reference/**"
+    ],
+    "ask": [
+      ".github/workflows/**",
+      "wrangler.toml",
+      "_headers",
+      "_redirects",
+      "supabase/migrations/**",
+      "package-lock.json"
+    ],
+    "lockedText": [],
+    "important": [
+      "samples/",
+      "out/golden/",
+      "tests/pdf-library*/",
+      ".mission/ledger.jsonl",
+      "build/backup/"
+    ]
+  },
+  "bash": {
+    "deny": [],
+    "ask": [],
+    "freeDirs": [
+      "%TEMP%/**",
+      "%TEMP%/claude/**",
+      "build/logs/**"
+    ]
+  },
+  "appSkills": {
+    "review": "ba-chuyen-gia",
+    "deploy": "ship"
+  },
+  "threeExperts": {
+    "_note": "Empty = ba-chuyen-gia splits the 3 areas by itself to suit the app. To fix them, copy _example into areas and adjust the paths/commands to match the app.",
+    "areas": [],
+    "_example": [
+      {
+        "name": "Lõi / logic",
+        "files": [
+          "src/engine/**"
+        ],
+        "focus": "rules firing by mistake, units, thresholds, regressions on samples",
+        "commands": [
+          "npm test"
+        ]
+      },
+      {
+        "name": "Dữ liệu và ca biên",
+        "files": [
+          "src/io/**",
+          "samples/**"
+        ],
+        "focus": "unusual/missing input, other clients' samples, old data",
+        "commands": [
+          "npm test"
+        ]
+      },
+      {
+        "name": "Người dùng / giao diện",
+        "files": [
+          "index.html",
+          "src/ui/**"
+        ],
+        "focus": "interface at 3 screen sizes, file export, console errors, is it worth using",
+        "commands": [
+          "node \"$MISSION_KIT/tools/web-smoke.mjs\" index.html --out .mission/shots"
+        ]
+      }
+    ]
+  },
+  "ship": {
+    "checkCmd": "",
+    "previewCmd": "",
+    "deployCmd": "",
+    "siteUrl": "",
+    "lockChecks": [],
+    "tag": false,
+    "backupDir": "build/backup",
+    "backupFiles": []
+  },
+  "units": [
+    {
+      "name": "feature",
+      "list": [
+        "mo-du-an",
+        "nhap-pdf",
+        "kiem-tra",
+        "bao-cao",
+        "xuat-file"
+      ]
+    },
+    {
+      "name": "case",
+      "source": "samples/*.pdf",
+      "target": "tests/expected/*.json",
+      "pair": "sameName"
+    }
+  ],
+  "gates": [
+    {
+      "id": "G1",
+      "name": "Đúng yêu cầu (spec, Definition of Done)"
+    },
+    {
+      "id": "G2",
+      "name": "Đúng luật/quy chuẩn, có trích nguồn"
+    },
+    {
+      "id": "G3",
+      "name": "Chạy đúng với dự án thật của công ty"
+    },
+    {
+      "id": "G4",
+      "name": "Giao diện và trải nghiệm (3 khổ màn hình)"
+    },
+    {
+      "id": "G5",
+      "name": "Phân quyền và bảo mật (nội bộ / khách hàng)"
+    },
+    {
+      "id": "G6",
+      "name": "Dữ liệu một nguồn sự thật"
+    },
+    {
+      "id": "G7",
+      "name": "Kỹ thuật: không lỗi console, build, hiệu năng"
+    },
+    {
+      "id": "G8",
+      "name": "Phản biện độc lập — 3 chuyên gia (skill ba-chuyen-gia)"
+    }
+  ],
+  "independentGates": [
+    "G8"
+  ],
+  "severities": [
+    "CRITICAL",
+    "HIGH",
+    "MEDIUM",
+    "LOW"
+  ],
+  "blockingSeverities": [
+    "CRITICAL",
+    "HIGH"
+  ],
+  "checks": {
+    "onEdit": [],
+    "full": [
+      {
+        "name": "chạy thử trên trình duyệt",
+        "cmd": "node \"$MISSION_KIT/tools/web-smoke.mjs\" index.html",
+        "timeout": 180
+      },
+      {
+        "name": "lint",
+        "cmd": "node \"$MISSION_KIT/mission.mjs\" lint --all --summary"
+      },
+      {
+        "name": "tên trùng (xung đột)",
+        "cmd": "node \"$MISSION_KIT/mission.mjs\" tidy --conflicts"
+      }
+    ],
+    "remind": []
+  },
+  "lint": {
+    "rules": [
+      {
+        "id": "bi-mat",
+        "glob": [
+          "**/*.{html,js,mjs,cjs,ts,tsx,jsx,json,toml,py,sh,ps1,env}"
+        ],
+        "pattern": "(sk-(ant|proj)-[\\w-]{20,}|sk-[A-Za-z0-9]{32,}|sk_live_\\w{20,}|cf(ut|at)_\\w{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|AKIA[0-9A-Z]{16}|xox[bp]-[0-9A-Za-z-]{10,}|eyJ[\\w-]{10,}\\.eyJ[\\w-]{10,}\\.[\\w-]{10,}|service_role\\s*[:=]\\s*['\"][^'\"]{20,})",
+        "skipLinePattern": "^\\s*(//|#|\\*)",
+        "message": "Looks like a secret key in the code — move it to an environment variable/secret",
+        "severity": "error"
+      },
+      {
+        "id": "bi-mat-cloudflare",
+        "glob": [
+          "**/*.{html,js,mjs,cjs,ts,tsx,jsx,json,toml,py,sh,ps1,env}"
+        ],
+        "pattern": "(CLOUDFLARE|CF)_[A-Z_]*(TOKEN|KEY|SECRET)\\s*[:=]\\s*[\"']?[A-Za-z0-9_-]{30,}",
+        "skipLinePattern": "^\\s*(//|#|\\*)",
+        "message": "Looks like a Cloudflare token in the code — move it to an environment variable/secret",
+        "severity": "error"
+      },
+      {
+        "id": "console-log",
+        "glob": [
+          "**/*.{html,js,mjs,ts}"
+        ],
+        "pattern": "console\\.log\\(",
+        "message": "console.log left in",
+        "severity": "warning"
+      },
+      {
+        "id": "todo",
+        "glob": [
+          "**/*.{html,js,mjs,ts,md}"
+        ],
+        "pattern": "\\b(TODO|FIXME|XXX)\\b",
+        "skipLinePattern": "^\\s*-\\s*\\[",
+        "message": "TODO/FIXME left in",
+        "severity": "warning"
+      }
+    ]
+  },
+  "privacy": {
+    "patterns": [
+      "(?<![\\d.])(?:\\+61\\s?4|04)\\d{2}[\\s-]?\\d{3}[\\s-]?\\d{3}(?![\\d])",
+      "\\(0[2378]\\)\\s?\\d{4}\\s?\\d{4}",
+      "\\bLOT\\s+\\d+\\s+(?:IN\\s+)?DP\\s*\\d+"
+    ],
+    "denylistFiles": [],
+    "allowPatterns": [],
+    "sampleDirs": [],
+    "blockCommitExtensions": [],
+    "blockPush": false,
+    "clientCode": {
+      "_note": "identifiers = regex of table/column/secret-key names; code that can reach the browser and mentions them is blocked",
+      "identifiers": [],
+      "serverMarker": "",
+      "serverMarkerLabel": ""
+    },
+    "addressCheck": "strong",
+    "_note": "Default patterns: Australian mobile numbers, landline numbers (02)…, LOT n DP n. Email is not blocked by default (the Co-Authored-By line of a commit contains an email). addressCheck: strong | all | off (apps with no client data, such as a game or a public handbook → off)."
+  },
+  "review": {
+    "defaultAgents": 3,
+    "maxRounds": 3
+  },
+  "stopGate": {
+    "enabled": true,
+    "watch": [],
+    "mode": "remind"
+  },
+  "tidy": {
+    "_note": "Used by /mission-tidy, by the after-edit hook (onEdit: warns about duplicate names / functions that already exist in another file / repeated blocks touching the file just edited, reminds you to record new files in .mission/LT.md; false = off) and by the check step «tidy --conflicts». include = real source code (not build output). sharedScope: each element is a group of files that run in a shared scope (a build that joins files, or several plain <script> tags) — a duplicate name within a group is a real conflict.",
+    "onEdit": true,
+    "include": [
+      "**/*.{js,mjs,cjs,ts,tsx,jsx,py,css}"
+    ],
+    "exclude": [],
+    "maxFileLines": 400,
+    "maxFuncLines": 80,
+    "minDupLines": 8,
+    "sharedScope": []
+  },
+  "readGuard": {
+    "_note": "Default: block reading secret files; ask before reading Desktop/Documents/Pictures/Videos/Music/OneDrive/Dropbox. extraPrivateDirs = add more private folders (ask); denyDirs = never read; privateDirs = replace the whole default list.",
+    "extraSecrets": [],
+    "extraPrivateDirs": [],
+    "denyDirs": [],
+    "allowDirs": [],
+    "outside": "allow"
+  },
+  "handoff": {
+    "_note": "Only when the app sends work to ChatGPT for review (/mission-handoff). exchangeDir = outbox INSIDE the app, relative (e.g. docs/reviews/outbox); Claude pastes the text in it into ChatGPT using Claude's browser, not via Dropbox. Empty = off.",
+    "exchangeDir": "",
+    "verdictGlob": "",
+    "verdictSourceLine": "",
+    "blockAmounts": false,
+    "syntheticAmountsFile": ""
+  },
+  "samples": {
+    "_note": "Only for apps that read drawings (/mission-new-sample). Commands use {file} (file name in dir) and {name} (short name).",
+    "dir": "",
+    "readCmd": "",
+    "overlayCmd": "",
+    "reviewCmd": "",
+    "checkCmds": [],
+    "expectedFile": "",
+    "historyFile": ""
+  }
+}

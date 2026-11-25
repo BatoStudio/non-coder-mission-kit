@@ -1,0 +1,48 @@
+# GitHub Actions template: runs the Mission Kit full check on every PR.
+# The kit is not in the app's repo (.claude/mission-kit/ is in .gitignore), so the job downloads the kit into a temp folder itself.
+# Set the repo variable MISSION_KIT_REPO (Settings → Variables) if you use a fork of the kit.
+# Copy to .github/workflows/mission-check.yml. Only checks, does NOT publish, does NOT push commits.
+name: Mission check
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      MISSION_KIT: ${{ runner.temp }}/non-coder-mission-kit/kit
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # to compare with the main branch and read the history
+      - run: git fetch origin "${{ github.base_ref || 'main' }}:${{ github.base_ref || 'main' }}" || true
+      - name: Download Mission Kit
+        run: git clone --depth 1 "${{ vars.MISSION_KIT_REPO || 'https://github.com/BatoStudio/non-coder-mission-kit' }}" "${{ runner.temp }}/non-coder-mission-kit"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Browser for web-smoke
+        run: npm i --no-save playwright && npx playwright install --with-deps chromium
+      - name: Full check
+        run: node "$MISSION_KIT/mission.mjs" check --full
+      - name: Report
+        if: always()
+        run: |
+          node "$MISSION_KIT/mission.mjs" report || true
+          node "$MISSION_KIT/mission.mjs" done || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mission-report
+          path: |
+            .mission/checks.md
+            .mission/progress.md
+            .mission/gates.md
+            .mission/ledger.md
+            dist/
+          if-no-files-found: ignore

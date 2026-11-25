@@ -287,14 +287,14 @@ if (cmd === 'gate') {
     if (cfg.independentGates.includes(gid) && status === 'PASS') {
       if (!/^(agent|human):/.test(flags.by)) die(`${gid} là cổng độc lập: --by phải là «agent:<tên>» hoặc «human:<tên>», không phải người làm ra phần đó.`);
       if (/^agent:/.test(flags.by)) {
-        if (!flags.report) die(`${gid}: cần --report .mission/reviews/<tệp>.md — báo cáo nguyên văn của subagent (có dòng «KẾT LUẬN: … PASS»).`);
+        if (!flags.report) die(`${gid}: cần --report .mission/reviews/<tệp>.md — báo cáo nguyên văn của subagent (có dòng «KẾT LUẬN: … PASS» hoặc «VERDICT: … PASS»).`);
         guardPrivacy(flags.report);
         const rp = resolve(root, flags.report);
         if (!toRel(root, rp).toLowerCase().startsWith('.mission/reviews/') || !existsSync(rp)) die('--report phải là tệp có thật trong .mission/reviews/');
         const txt = readFileSync(rp, 'utf8').replace(/^\uFEFF/, '').normalize('NFC');
-        const verdicts = txt.split('\n').filter(l => /KẾT LUẬN[^:\n]*:/i.test(l));
+        const verdicts = txt.split('\n').filter(l => /KẾT LUẬN[^:\n]*:|^[\s*#>_-]*VERDICT\b[^:\n]*:/i.test(l));
         const last = verdicts.at(-1) || '';
-        if (!/:\s*\**\s*PASS\b/i.test(last) || /\bFAIL\b/i.test(last)) die('Báo cáo không có dòng «KẾT LUẬN: … PASS» — cổng độc lập chưa đạt.');
+        if (!/:\s*\**\s*PASS\b/i.test(last) || /\bFAIL\b/i.test(last)) die('Báo cáo không có dòng «KẾT LUẬN: … PASS» (hoặc «VERDICT: … PASS») — cổng độc lập chưa đạt.');
         if (/THI[ẾE]U\s+B[ẰA]NG\s+CH[ỨU]NG|EVIDENCE\s+MISSING/i.test(last)) die('Dòng kết luận cuối còn «THIẾU BẰNG CHỨNG» — chưa đủ bằng chứng để chấm đạt cổng độc lập.');
         guardPrivacy(txt);
         report = toRel(root, rp);

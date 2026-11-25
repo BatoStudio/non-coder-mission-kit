@@ -49,7 +49,7 @@ try {
     for (const b of dups.slice(0, 3)) warnings.push(`Khối lặp ${b.size} dòng: ${b.places.map(p => `${p.path}:${p.line}-${p.endLine}`).join(' · ')} — gộp thành một hàm dùng chung`);
     const ltp = mpath(root, 'LT.md');
     if (existsSync(ltp) && !git(root, ['ls-files', '--', rel]) && !ltMentions(readFileSync(ltp, 'utf8'), rel))
-      reminders.push(`Tệp mới ${rel} chưa có trong bản đồ .mission/LT.md — thêm 1 dòng ở mục «Tính năng»: <tính năng> — <thư mục/tệp> — <hàm/khái niệm nó sở hữu>`);
+      reminders.push(`Tệp mới ${rel} chưa có trong bản đồ .mission/LT.md — thêm 1 dòng ở mục «Tính năng» (bản tiếng Anh: «Features»): <tính năng> — <thư mục/tệp> — <hàm/khái niệm nó sở hữu>`);
   }
 } catch {}
 for (const r of cfg.checks.remind) {

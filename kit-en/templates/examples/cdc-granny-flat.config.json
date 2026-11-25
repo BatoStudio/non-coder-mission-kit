@@ -1,0 +1,199 @@
+{
+  "_note": "Template for an app that looks up/checks against planning regulations (example from NSW, Australia). Regulation data shared between apps should live in a single repo/folder.",
+  "name": "NSW planning checker (ví dụ)",
+  "mainBranch": "main",
+  "workBranchPrefix": "work/",
+  "git": {
+    "mode": "local-main"
+  },
+  "deliverables": [
+    {
+      "path": "index.html",
+      "description": "DA→CC and CDC checklist app, preliminary results with corrective actions"
+    }
+  ],
+  "protect": {
+    "deny": [
+      "samples/**",
+      "reference/**"
+    ],
+    "ask": [
+      "rules/**",
+      "tests/expected/**",
+      "wrangler.toml",
+      ".github/workflows/**"
+    ]
+  },
+  "bash": {
+    "deny": [],
+    "ask": [
+      "node\\s+scripts/(fetch|update)-rules"
+    ]
+  },
+  "appSkills": {
+    "review": "ba-chuyen-gia",
+    "deploy": "ship"
+  },
+  "units": [
+    {
+      "name": "rule",
+      "source": "rules/*.json",
+      "pair": "sameName",
+      "gates": [
+        "G2",
+        "G3"
+      ]
+    },
+    {
+      "name": "case",
+      "source": "samples/*.json",
+      "target": "tests/expected/*.json",
+      "pair": "sameName",
+      "gates": [
+        "G2",
+        "G3",
+        "G7"
+      ]
+    },
+    {
+      "name": "feature",
+      "list": [
+        "danh-sach-ho-so",
+        "kiem-ban-ve-vs-tu-van",
+        "dien-form-certifier",
+        "bao-cao"
+      ]
+    }
+  ],
+  "gates": [
+    {
+      "id": "G1",
+      "name": "Đúng yêu cầu (DoD)"
+    },
+    {
+      "id": "G2",
+      "name": "Luật đúng văn bản đang hiệu lực, đúng ngưỡng, đúng council/zone/lộ trình"
+    },
+    {
+      "id": "G3",
+      "name": "Dự án thật của bạn cho kết quả đúng"
+    },
+    {
+      "id": "G4",
+      "name": "Giao diện, kết quả ghi rõ là sơ bộ"
+    },
+    {
+      "id": "G5",
+      "name": "Phân quyền nội bộ / khách hàng"
+    },
+    {
+      "id": "G6",
+      "name": "Luật ở một nguồn duy nhất, dùng chung giữa các app"
+    },
+    {
+      "id": "G7",
+      "name": "Kỹ thuật"
+    },
+    {
+      "id": "G8",
+      "name": "Phản biện độc lập — 3 chuyên gia (ba-chuyen-gia; một mảng là luật: mission-rules-checker)"
+    }
+  ],
+  "independentGates": [
+    "G2",
+    "G8"
+  ],
+  "checks": {
+    "onEdit": [
+      {
+        "name": "kiểm dữ liệu luật",
+        "glob": "rules/**",
+        "cmd": "node \"$MISSION_KIT/tools/rules-audit.mjs\" rules --require-version",
+        "timeout": 30
+      }
+    ],
+    "full": [
+      {
+        "name": "dữ liệu luật đủ nguồn, fix, ca kiểm thử",
+        "cmd": "node \"$MISSION_KIT/tools/rules-audit.mjs\" rules --require-version"
+      },
+      {
+        "name": "toàn bộ ca kiểm thử dự án thật",
+        "cmd": "npm test --silent",
+        "timeout": 600
+      },
+      {
+        "name": "chạy thử giao diện",
+        "cmd": "node \"$MISSION_KIT/tools/web-smoke.mjs\" index.html",
+        "timeout": 180
+      },
+      {
+        "name": "lint",
+        "cmd": "node \"$MISSION_KIT/mission.mjs\" lint --all --summary"
+      }
+    ]
+  },
+  "lint": {
+    "rules": [
+      {
+        "id": "bi-mat",
+        "glob": [
+          "**/*.{html,js,mjs,cjs,ts,tsx,jsx,json,toml,py,sh,ps1,env}"
+        ],
+        "pattern": "(sk-(ant|proj)-[\\w-]{20,}|sk-[A-Za-z0-9]{32,}|sk_live_\\w{20,}|cf(ut|at)_\\w{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|AKIA[0-9A-Z]{16}|xox[bp]-[0-9A-Za-z-]{10,}|eyJ[\\w-]{10,}\\.eyJ[\\w-]{10,}\\.[\\w-]{10,}|service_role\\s*[:=]\\s*['\"][^'\"]{20,})",
+        "skipLinePattern": "^\\s*(//|#|\\*)",
+        "message": "Looks like a secret key in the code — move it to an environment variable/secret",
+        "severity": "error"
+      },
+      {
+        "id": "bi-mat-cloudflare",
+        "glob": [
+          "**/*.{html,js,mjs,cjs,ts,tsx,jsx,json,toml,py,sh,ps1,env}"
+        ],
+        "pattern": "(CLOUDFLARE|CF)_[A-Z_]*(TOKEN|KEY|SECRET)\\s*[:=]\\s*[\"']?[A-Za-z0-9_-]{30,}",
+        "skipLinePattern": "^\\s*(//|#|\\*)",
+        "message": "Looks like a Cloudflare token in the code — move it to an environment variable/secret",
+        "severity": "error"
+      },
+      {
+        "id": "noi-chac",
+        "glob": [
+          "*.html",
+          "src/**"
+        ],
+        "pattern": "(chắc chắn được phép|guaranteed|definitely (allowed|approved)|100% compliant)",
+        "flags": "i",
+        "message": "Preliminary results must not be stated as certain",
+        "severity": "error"
+      },
+      {
+        "id": "nguong-cung",
+        "glob": [
+          "src/**",
+          "*.html"
+        ],
+        "pattern": "[<>]=?\\s*(24|4|2\\.5|450)\\b",
+        "message": "Regulation threshold hard-coded in the code — move it into rules/ with a cited source",
+        "severity": "warning"
+      }
+    ]
+  },
+  "privacy": {
+    "patterns": [],
+    "denylistFiles": []
+  },
+  "review": {
+    "defaultAgents": 3,
+    "maxRounds": 3
+  },
+  "stopGate": {
+    "enabled": true,
+    "watch": [
+      "*.html",
+      "src/**",
+      "rules/**",
+      "tests/**"
+    ],
+    "mode": "remind"
+  }
+}

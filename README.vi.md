@@ -54,6 +54,7 @@ Có hai cách dùng:
    cd "D:\APPS\_tools\non-coder-mission-kit"
    node install.mjs --project "D:\APPS\MY APP" --dry-run   # xem trước, chưa ghi gì
    node install.mjs --project "D:\APPS\MY APP"             # cài thật
+   # bản tiếng Anh (English version): thêm --lang en, vd. node install.mjs --lang en --project "D:\APPS\MY APP"
    ```
    Cài xong sẽ thấy dòng `Xong (một app: …)`. Hook của kit nằm trong `.claude/settings.local.json` (chỉ máy này). Trình cài chỉ thêm vào `.claude/settings.json` của app đúng 2 khóa `"model": "sonnet"` và `"advisorModel": "fable"` (làm việc bằng Sonnet, hỏi cố vấn Fable) — app đã đặt giá trị khác thì **giữ nguyên và báo**; gói Claude của bạn không có Fable thì đổi `advisorModel` (vd. `opus`) hoặc xóa khóa đó; gỡ kit chỉ bỏ khóa do kit ghi. Nó thêm một khối dòng vào `.gitignore` của app (để không commit bản sao kit) — commit thay đổi đó một lần. Clone app sang máy khác thì chạy lại lệnh cài trên máy đó.
 

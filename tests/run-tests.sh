@@ -75,6 +75,12 @@ printf 'THIẾU BẰNG CHỨNG: luật\nKẾT LUẬN: FAIL (THIẾU BẰNG CHỨ
 expect "FAIL vì thiếu bằng chứng → từ chối" "chưa đạt" "$(M gate set f:a G8 PASS --by agent:x --evidence ok --report .mission/reviews/tf.md 2>&1)"
 printf 'THIẾU BẰNG CHỨNG: trang phụ (đã báo)\nKẾT LUẬN: PASS\n' > .mission/reviews/tp.md
 expect "THIẾU BẰNG CHỨNG chỉ ở thân, kết luận cuối PASS → nhận" "G8=PASS" "$(M gate set f:a G8 PASS --by agent:x --evidence ok --report .mission/reviews/tp.md 2>&1)"
+printf 'minor: button label\n**VERDICT: PASS WITH FIXES** (2 minor)\n' > .mission/reviews/en.md
+expect "bản tiếng Anh: VERDICT: PASS WITH FIXES → nhận" "G8=PASS" "$(M gate set f:a G8 PASS --by agent:x --evidence ok --report .mission/reviews/en.md 2>&1)"
+printf 'round 1\nVERDICT: PASS\nround 2\nVERDICT: FAIL (1 HIGH)\n' > .mission/reviews/enf.md
+expect "bản tiếng Anh: VERDICT cuối FAIL → từ chối" "chưa đạt" "$(M gate set f:a G8 PASS --by agent:x --evidence ok --report .mission/reviews/enf.md 2>&1)"
+printf 'VERDICT: PASS (EVIDENCE MISSING: 3D page)\n' > .mission/reviews/enm.md
+expect "bản tiếng Anh: VERDICT PASS mà EVIDENCE MISSING → từ chối" "THIẾU BẰNG CHỨNG" "$(M gate set f:a G8 PASS --by agent:x --evidence ok --report .mission/reviews/enm.md 2>&1)"
 printf 'vòng 1\nKẾT LUẬN: FAIL (1 HIGH)\nvòng 2\nKẾT LUẬN: PASS\n' > .mission/reviews/r.md
 expect "báo cáo có PASS ở dòng kết luận cuối → nhận" "G8=PASS" "$(M gate set f:a G8 PASS --by agent:mission-checker --evidence ok --report .mission/reviews/r.md 2>&1)"
 M report >/dev/null; git add -A; git commit -qm "đạt"
@@ -1026,6 +1032,9 @@ o=$(node "$KITSRC/tests/model-config.test.mjs" 2>&1) && ok "tests/model-config.t
 
 echo "## mission-protect: làm rối bản build (chỉ dist/, không đụng nguồn)"
 o=$(node "$KITSRC/tests/protect.test.mjs" 2>&1) && ok "tests/protect.test.mjs — $(tail -1 <<<"$o")" || bad "tests/protect.test.mjs — $(grep -E '✗|KẾT QUẢ|Error' <<<"$o" | head -8)"
+
+echo "## Bản tiếng Anh (kit-en, install --lang en)"
+o=$(node "$KITSRC/tests/lang-en.test.mjs" 2>&1) && ok "tests/lang-en.test.mjs — $(tail -1 <<<"$o")" || bad "tests/lang-en.test.mjs — $(grep -E '✗|Error' <<<"$o" | head -8)"
 
 echo "## LỖI 8: che suburb sau dấu phẩy (địa chỉ giả)"
 MASK8(){ node --input-type=module -e 'import { pathToFileURL as u } from "node:url"; const { maskPrivate } = await import(u(process.argv[1] + "/kit/lib.mjs").href); console.log(maskPrivate(".", { privacy: { patterns: [], denylistFiles: [] } }, process.argv[2]));' "$KITSRC" "$1" 2>&1; }
