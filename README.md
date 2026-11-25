@@ -1,206 +1,259 @@
-# Non-coder Mission Kit — Claude Code cho người không chuyên
+# Non-coder Mission Kit — Claude Code for non-programmers
 
-Quy trình làm app dùng lại được cho các app của bạn (mặc định ở `D:\APPS`, đổi bằng biến môi trường `MISSION_APPS_ROOT`). Kit đóng gói cách làm **3 chuyên gia**, ISSUE kèm hướng điều chỉnh, Definition of Done, NOW/NEXT/LATER thành:
-- 25 skill (23 skill `mission-*` cùng `ba-chuyen-gia` và `ship` viết sẵn theo quy trình 3 chuyên gia), trong đó có `mission-video` để làm video có giọng đọc, và `mission-github` để sao lưu mã nguồn lên GitHub (private),
-- 8 subagent soát độc lập,
-- 16 lệnh gõ `/` (11 lệnh riêng + 5 skill gọi bằng `/`),
-- 7 hook tự chạy (gồm lớp bảo vệ dữ liệu khách và tệp bí mật),
-- một công cụ ghi sổ lỗi và cổng chất lượng.
+[Tiếng Việt](README.vi.md) · **English**
 
-**Kit không thay thứ bạn đã có.** Hook, skill và agent riêng của app (nếu có) vẫn chạy như cũ. Mọi thứ của kit đều có tiền tố `mission-` nên không đè lên đồ của app. App nào chưa gõ `/mission-init` thì kit không làm gì.
+A reusable way of building apps with Claude Code, made for people who are not programmers. Your apps live in `D:\APPS` by default; change this with the `MISSION_APPS_ROOT` environment variable. The kit packages a working method (a **3-expert review**, every defect logged with a corrective action, a Definition of Done, NOW/NEXT/LATER planning) into:
+- 25 skills: 23 `mission-*` skills plus `ba-chuyen-gia` ("three experts") and `ship`. They include `mission-video` for narrated videos and `mission-github` for backing up code to a private GitHub repo.
+- 8 independent reviewer subagents.
+- 16 slash commands (11 commands plus 5 skills you call with `/`).
+- 7 automatic hooks, including a protection layer for client data and secret files.
+- A tool that keeps a defect ledger and quality gates.
 
-Có hai cách dùng:
+> **Language note.** The kit's instructions, messages and reports are written in **Vietnamese**, so by default Claude reports in Vietnamese. To work in English, add one line to your app's `CLAUDE.md`: `Always reply to me in English.` The hooks' own messages (the reasons they block or ask) stay in Vietnamese, but Claude can explain them. Some command arguments are Vietnamese words; their meaning is shown in the tables below.
 
-| | Cách nhẹ | Cách đầy đủ |
+**The kit does not replace what you already have.** Your app's own hooks, skills and agents keep working as before. Everything in the kit starts with `mission-`, so it never overwrites anything of your app's. The kit does nothing in an app until you run `/mission-init` there.
+
+There are two ways to use it:
+
+| | Light | Full |
 | --- | --- | --- |
-| Là gì | Một tệp quy trình `QUY-TRINH.md`, mỗi CLAUDE.md nhúng vào | Cài kit cho một app |
-| Ép buộc | Không, chỉ dặn | Có: hook chặn, sổ lỗi, cổng, `done` |
-| Token | Gần như không thêm | Thêm khoảng 2–3 nghìn mỗi phiên, cộng phần soát khi bạn gọi |
-| Hợp với | Mọi app, ngay hôm nay | App mới hoặc app cần chắc chắn (luật/quy chuẩn, dữ liệu khách) |
+| What it is | One process file, `QUY-TRINH.md`, that each `CLAUDE.md` includes | The kit installed into an app |
+| Enforced | No, only advice | Yes: blocking hooks, defect ledger, gates, `done` |
+| Tokens | Almost none extra | About 2–3 thousand extra per session, plus reviews when you ask for them |
+| Good for | Any app, today | New apps, or apps that must be right (rules and codes, client data) |
 
-## Cách nhẹ (2 phút)
+## Light way (2 minutes)
 
-1. Chép `kit/templates/QUY-TRINH.md` vào `D:\APPS\`.
-2. Thêm một dòng vào đầu `CLAUDE.md` của app: `@../QUY-TRINH.md`
-3. Lần đầu mở app, Claude Code có thể hỏi có cho đọc tệp nằm ngoài thư mục app không: chọn đồng ý.
+1. Copy `kit/templates/QUY-TRINH.md` into `D:\APPS\`.
+2. Add one line at the top of your app's `CLAUDE.md`: `@../QUY-TRINH.md`
+3. The first time you open the app, Claude Code may ask whether it may read a file outside the app folder. Say yes.
 
-## Cách đầy đủ: bắt đầu trong 5 phút (Windows)
+## Full way: start in 5 minutes (Windows)
 
-0. **Kiểm tra máy có đủ đồ nghề** (mở PowerShell: bấm Start, gõ `powershell`, Enter):
+0. **Check that your computer has the tools.** Open PowerShell (press Start, type `powershell`, press Enter):
    ```powershell
-   node -v          # phải ra v18 trở lên
-   git --version    # phải ra "git version …"
-   Test-Path "C:\Program Files\Git\bin\bash.exe"   # phải ra True
-   claude --version # phải ra số phiên bản Claude Code
+   node -v          # must show v18 or later
+   git --version    # must show "git version …"
+   Test-Path "C:\Program Files\Git\bin\bash.exe"   # must show True
+   claude --version # must show a Claude Code version number
    ```
-   Dòng nào báo lỗi hoặc ra `False` thì cài trước: Node.js (nodejs.org, bản LTS) Git for Windows (git-scm.com, đã kèm Git Bash) và Claude Code (claude.com/claude-code). Tuỳ chọn: GitHub CLI `gh` (cho `mission-github`), `wrangler` (nếu triển khai lên Cloudflare). **Thiếu Node thì mọi hook của kit lặng lẽ không chạy** — không báo gì cả. Cài xong, đóng và mở lại PowerShell.
+   If a line shows an error or `False`, install that tool first:
+   - Node.js (nodejs.org, the LTS version).
+   - Git for Windows (git-scm.com; it includes Git Bash).
+   - Claude Code (claude.com/claude-code).
 
-   Chỉ khi cần làm video (`mission-video`), kiểm thêm:
+   Optional: the GitHub CLI `gh` (for `mission-github`) and `wrangler` (if you deploy to Cloudflare). **Without Node, none of the kit's hooks run, and nothing tells you so.** After installing, close PowerShell and open it again.
+
+   Only if you will make videos (`mission-video`), also check:
    ```powershell
-   py -3 --version   # phải ra Python 3.x (dùng py -3, không dùng python — đó là bản giả của Windows Store)
-   ffmpeg -version   # phải ra "ffmpeg version …"
+   py -3 --version   # must show Python 3.x (use py -3, not python, which is a Windows Store stub)
+   ffmpeg -version   # must show "ffmpeg version …"
    ```
-   Giọng đọc Kokoro cần hai tệp mô hình `kokoro-v1.0.onnx` và `voices-v1.0.bin` (338 MB) trong `%USERPROFILE%\.cache\kokoro`. Chưa có thì tải ở trang releases của kokoro-onnx (`model-files-v1.0`, github.com/thewh1teagle/kokoro-onnx/releases). Cài thư viện: `py -3 -m pip install kokoro-onnx edge-tts soundfile numpy scipy pyloudnorm pillow`. Giọng tiếng Việt dùng Edge (`--engine edge`, giọng nữ vi-VN-HoaiMyNeural, cần mạng). Chi tiết trong `kit/skills/mission-video/references/voice.md`.
-1. Tải kit về, ví dụ vào `D:\APPS\_tools\non-coder-mission-kit`:
+   The Kokoro voice needs two model files, `kokoro-v1.0.onnx` and `voices-v1.0.bin` (338 MB), in `%USERPROFILE%\.cache\kokoro`. If you don't have them, download them from the kokoro-onnx releases page (`model-files-v1.0`, github.com/thewh1teagle/kokoro-onnx/releases). Install the libraries with `py -3 -m pip install kokoro-onnx edge-tts soundfile numpy scipy pyloudnorm pillow`. Vietnamese narration uses Edge (`--engine edge`, the female voice vi-VN-HoaiMyNeural, needs internet). Details are in `kit/skills/mission-video/references/voice.md`.
+1. Download the kit, for example into `D:\APPS\_tools\non-coder-mission-kit`:
    ```powershell
    git clone https://github.com/BatoStudio/non-coder-mission-kit "D:\APPS\_tools\non-coder-mission-kit"
    ```
-   (hoặc bấm **Code → Download ZIP** trên GitHub rồi giải nén vào `D:\APPS\_tools\`. Thư mục giải ra tên là `non-coder-mission-kit-main`: đổi tên thành `non-coder-mission-kit` cho khớp các lệnh bên dưới). Các app của bạn không nằm ở `D:\APPS`? Đặt biến môi trường `MISSION_APPS_ROOT` (đường dẫn tuyệt đối, nhiều thư mục cách nhau bằng `;`; app nằm ngoài `D:\APPS` mà không đặt biến này thì kit không nhận ra đâu là thư mục app thật) để kit biết đâu là thư mục app thật.
-2. Vẫn trong cửa sổ PowerShell đó, làm bước 3.
-3. Gõ lần lượt các lệnh (đổi tên app cho đúng; đường dẫn có dấu cách thì giữ nguyên dấu ngoặc kép):
+   Or, on GitHub, press **Code → Download ZIP** and unzip it into `D:\APPS\_tools\`. The unzipped folder is called `non-coder-mission-kit-main`: rename it to `non-coder-mission-kit` so the commands below work.
+
+   If your apps are not in `D:\APPS`, set the `MISSION_APPS_ROOT` environment variable. Use absolute paths, and separate several folders with `;`. Without it, the kit cannot tell which folders are real apps when they sit outside `D:\APPS`.
+2. Stay in the same PowerShell window for step 3.
+3. Type these commands one by one. Change the app name to yours, and keep the quotes if the path has spaces:
    ```powershell
    cd "D:\APPS\_tools\non-coder-mission-kit"
-   node install.mjs --project "D:\APPS\MY APP" --dry-run   # xem trước, chưa ghi gì
-   node install.mjs --project "D:\APPS\MY APP"             # cài thật
+   node install.mjs --project "D:\APPS\MY APP" --dry-run   # preview only, writes nothing
+   node install.mjs --project "D:\APPS\MY APP"             # real install
    ```
-   Cài xong sẽ thấy dòng `Xong (một app: …)`. Hook của kit nằm trong `.claude/settings.local.json` (chỉ máy này). Trình cài chỉ thêm vào `.claude/settings.json` của app đúng 2 khóa `"model": "sonnet"` và `"advisorModel": "fable"` (làm việc bằng Sonnet, hỏi cố vấn Fable) — app đã đặt giá trị khác thì **giữ nguyên và báo**; gói Claude của bạn không có Fable thì đổi `advisorModel` (vd. `opus`) hoặc xóa khóa đó; gỡ kit chỉ bỏ khóa do kit ghi. Nó thêm một khối dòng vào `.gitignore` của app (để không commit bản sao kit) — commit thay đổi đó một lần. Clone app sang máy khác thì chạy lại lệnh cài trên máy đó.
+   When it finishes you will see the line `Xong (một app: …)` ("Done, one app: …"). What the installer changes in your app:
+   - **Hooks** go into `.claude/settings.local.json`, which applies to this computer only.
+   - **Model settings:** it adds exactly two keys to the app's `.claude/settings.json`, `"model": "sonnet"` and `"advisorModel": "fable"`. Claude then works with Sonnet and asks Fable for advice. If the app already set other values, the installer **keeps them and tells you**. If your Claude plan has no Fable, change `advisorModel` (for example to `opus`) or delete that key. Uninstalling removes only the keys the kit wrote.
+   - **`.gitignore`:** it adds a block of lines so the kit's copy is never committed. Commit that change once.
 
-   **Nên thử trước trên một app phụ**, dùng 1–2 tuần, rồi mới cài cho app chính.
-4. Mở Claude Code trong thư mục app: trong PowerShell gõ `cd "D:\APPS\MY APP"` rồi `claude` (hoặc mở thư mục đó trong ứng dụng Claude). Gõ `/mission-status`. Nếu thấy «Chạy /mission-init» là đã cài đúng.
-5. **Trao đổi ý tưởng với ChatGPT để viết brief.** Trình cài in sẵn các bước này ở cuối; tóm tắt:
-   - Lấy prompt: `node install.mjs --brief-prompt` (chạy trong thư mục kit) — prompt được in ra và **chép sẵn vào clipboard**. Hoặc mở `kit/templates/HUONG-DAN-BRIEF-CHATGPT.md`, chép khối «Prompt dán vào ChatGPT».
-   - Mở ChatGPT, tạo cuộc trò chuyện mới, dán prompt (Ctrl+V), rồi kể ý tưởng app bằng lời thường. ChatGPT hỏi lại từng nhóm, tối đa 5 câu mỗi lượt; câu nào chưa biết cứ trả lời «chưa biết».
-   - Khi ChatGPT xuất brief (một khối markdown, 15 mục): bấm Copy, dán vào Notepad, **lưu thành `brief.md` trong thư mục app** (ô «Save as type» chọn *All files*, Encoding *UTF-8* — để khỏi thành `brief.md.txt`).
-   - Không muốn dùng ChatGPT: gõ `/mission-brief` trong Claude Code, Claude tự hỏi và viết `brief.md`.
-6. Trong Claude Code (mở ở thư mục app), gõ `/mission-init brief.md`. Claude sẽ:
-   - đọc brief, rồi đọc hook, skill và script sẵn có của app;
-   - nối chúng vào kit;
-   - viết đặc tả và kế hoạch NOW/NEXT/LATER, cuối cùng hỏi bạn một lần các câu còn thiếu.
+   If you clone the app onto another computer, run the install command again there.
 
-**Gỡ cài đặt:** `node install.mjs --uninstall --project "D:\APPS\MY APP"`. Lệnh này chỉ xóa đúng các tệp kit đã cài và trả `settings.json`, `settings.local.json`, `.gitignore` về **đúng từng byte** như trước khi cài (nếu sau khi cài bạn tự sửa các tệp đó thì chỉ bỏ phần của kit, giữ phần bạn sửa). Thư mục `.mission/` được giữ lại.
+   **Try it on a side app first** for 1–2 weeks, then install it on your main app.
+4. Open Claude Code in the app folder. In PowerShell type `cd "D:\APPS\MY APP"`, then `claude`, or open that folder in the Claude app. Type `/mission-status`. If it says to run `/mission-init`, the kit is installed correctly.
+5. **Talk your idea through with ChatGPT to write a brief.** The installer prints these steps at the end. In short:
+   - Get the prompt: run `node install.mjs --brief-prompt` in the kit folder. The prompt is printed and **already copied to the clipboard**. Or open `kit/templates/HUONG-DAN-BRIEF-CHATGPT.md` and copy the block «Prompt dán vào ChatGPT».
+   - Open ChatGPT, start a new chat, paste the prompt (Ctrl+V), then describe your app idea in plain words. ChatGPT asks back in groups, at most 5 questions at a time. If you don't know an answer, just say so.
+   - When ChatGPT outputs the brief (one markdown block, 15 sections), press Copy and paste it into Notepad. **Save it as `brief.md` in the app folder.** In "Save as type" choose *All files* and set Encoding to *UTF-8*, so it doesn't become `brief.md.txt`.
+   - Don't want to use ChatGPT? Type `/mission-brief` in Claude Code and Claude asks the questions and writes `brief.md` itself.
+6. In Claude Code (opened in the app folder), type `/mission-init brief.md`. Claude will:
+   - read the brief, then the app's existing hooks, skills and scripts;
+   - connect them to the kit;
+   - write the spec and a NOW/NEXT/LATER plan, then ask you all remaining questions at once.
 
-**Cài cho cả máy:** chỉ làm khi đã thử ổn trên 1–2 app. Lệnh: `node install.mjs --global`. Lưu ý: khi đó mô tả của 20 skill tự nạp, 8 agent và 11 lệnh (khoảng 3 nghìn token) được nạp ở **mọi** phiên Claude Code, cả app chưa dùng kit. Nếu một app vừa có bản toàn máy vừa có bản riêng, hook chỉ chạy một lần (bản của app), nhưng skill/lệnh hiện hai lần — nên chọn một.
+**Uninstall:** `node install.mjs --uninstall --project "D:\APPS\MY APP"`. This removes only the files the kit installed. It returns `settings.json`, `settings.local.json` and `.gitignore` to **exactly the bytes** they had before the install. If you edited those files after installing, it removes only the kit's part and keeps your edits. The `.mission/` folder is kept.
 
-Để chạy thử giao diện tự động (`web-smoke`), cài một lần trong mỗi app web: `npm.cmd i -D playwright` rồi `npx.cmd playwright install chromium` (trong PowerShell nên gõ `npm.cmd`/`npx.cmd` để khỏi bị lỗi «npm.ps1 cannot be loaded»).
+**Install for the whole computer:** do this only after it has worked well on 1–2 apps. Command: `node install.mjs --global`. Note: the descriptions of the 20 auto-loading skills, 8 agents and 11 commands (about 3 thousand tokens) are then loaded in **every** Claude Code session, even in apps that don't use the kit. If an app has both the global copy and its own copy, the hooks run only once (the app's copy), but skills and commands appear twice. Pick one.
 
-## Lệnh
+To run automatic UI tests (`web-smoke`), install once in each web app: `npm.cmd i -D playwright`, then `npx.cmd playwright install chromium`. In PowerShell, type `npm.cmd`/`npx.cmd` to avoid the error «npm.ps1 cannot be loaded».
 
-| Lệnh | Việc |
+## Commands
+
+| Command | What it does |
 | --- | --- |
-| `/mission-brief [tên app hoặc ý tưởng]` | **Gõ trước `/mission-init`** khi bắt đầu dự án mới: Claude hỏi theo nhóm A–K (tối đa 5 câu mỗi lượt, có đáp án mặc định), viết `brief.md` 15 mục và `brief-chatgpt.md` để nhờ ChatGPT phản biện. Không tự gửi ra ngoài: bạn tự dán, hoặc nói rõ «gửi giúp» |
-| `/mission-init [tệp]` | Khởi tạo cho app: đặc tả, cấu hình, nối skill/hook sẵn có |
-| `/mission-status` | Tiến độ thật, ngắn, bằng tiếng Việt |
-| `/mission-sync [full\|no-site]` | Đối chiếu nhanh, chỉ đọc: còn gì chưa commit, nhánh nào chưa lên GitHub, repo còn private, site live chạy commit nào và còn bao nhiêu commit chưa deploy. Trả lời 3 dòng |
-| `/mission-next [n]` | Làm các lô ưu tiên cao nhất, chạy tiếp đến khi xong hoặc cần bạn quyết |
-| `/mission-review <đơn vị> [nhanh\|full]` | Mặc định chạy `ba-chuyen-gia` (3 chuyên gia song song); `nhanh` = 1 subagent; tối đa 3 vòng |
-| `/mission-tidy [đo\|kế hoạch\|làm <lô>\|kết thúc]` | Dọn mã: đo code lặp, tên trùng (xung đột), tệp/hàm dài → 3 chuyên gia lập kế hoạch → làm từng lô nhỏ, hồi quy phải khớp y nguyên → bảng trước/sau |
-| `/mission-fix <L-xxxx\|mô tả>` | Sửa lỗi 10 bước, có hướng điều chỉnh, quét mẫu lỗi lặp |
-| `/mission-options <vấn đề>` | Phương án → So sánh → Kiểm tra → Phản biện → Quyết định |
-| `/mission-verify` | Kiểm tra trước khi commit + kiểm chứng lại các tuyên bố «đã xong» |
-| `/mission-deploy [preview\|production]` | Triển khai theo bậc, mặc định qua skill `ship` |
-| `/mission-privacy [commit\|dang\|chia-se\|lich-su]` | Soát thông tin khách có lọt ra ngoài không (agent `mission-privacy-auditor`) |
-| `/mission-new-sample <tên ngắn>` | Đưa bộ bản vẽ/mẫu nhà mới vào app đọc bản vẽ: đọc → vẽ chồng → bạn đánh dấu → sửa theo quy luật → giữ mẫu cũ → khóa kết quả |
-| `/mission-handover [ghi chú]` | Bàn giao phiên: ghi đè `HANDOVER.md`, đóng sổ, cập nhật HTC/LT/manifest để phiên sau không đọc lại cả repo |
-| `/mission-handoff <đơn vị> <vòng>` | Đóng gói vòng soát gửi ChatGPT: bằng chứng, hồ sơ, vân tay, kiểm che thông tin, ghi vào hộp gửi trong app (`handoff.exchangeDir`, vd. `docs/reviews/outbox`), rồi Claude mở ChatGPT bằng **trình duyệt của Claude** để gửi và đọc kết luận (bạn tự đăng nhập; không qua Dropbox; chỉ trong ứng dụng Claude desktop — chạy `claude` trong terminal thì bạn tự dán), lưu nguyên văn kết luận |
-| `/mission-pr` | Nâng cao: chỉ cho chế độ git `branch-pr` |
+| `/mission-brief [app name or idea]` | **Run before `/mission-init`** when you start a new project. Claude asks questions in groups A–K (at most 5 per turn, with default answers). It writes a 15-section `brief.md` and a `brief-chatgpt.md` for ChatGPT to critique. Nothing is sent out on its own: you paste it yourself, or say clearly «gửi giúp» ("send it for me") |
+| `/mission-init [file]` | Sets up the app: spec, config, connects existing skills and hooks |
+| `/mission-status` | Real progress, short |
+| `/mission-sync [full\|no-site]` | A quick, read-only check, answered in 3 lines: uncommitted work, branches not yet on GitHub, whether the repo is still private, which commit the live site runs and how many commits are not deployed yet |
+| `/mission-next [n]` | Works through the highest-priority batches until done or until it needs your decision |
+| `/mission-review <unit> [nhanh\|full]` | Runs `ba-chuyen-gia` by default (3 experts in parallel); `nhanh` ("quick") = 1 subagent; at most 3 rounds |
+| `/mission-tidy [đo\|kế hoạch\|làm <batch>\|kết thúc]` | Code clean-up. `đo` ("measure") finds duplicated code, clashing names, and long files or functions. `kế hoạch` ("plan") has 3 experts plan it. `làm` ("do") works one small batch, and regression results must match exactly. `kết thúc` ("finish") shows a before/after table |
+| `/mission-fix <L-xxxx\|description>` | Fixes a defect in 10 steps, with a corrective action, and scans for the same mistake elsewhere |
+| `/mission-options <problem>` | Options → Compare → Check → Critique → Decide |
+| `/mission-verify` | Checks before a commit, and re-checks every "done" claim |
+| `/mission-deploy [preview\|production]` | Deploys in stages, through the `ship` skill by default |
+| `/mission-privacy [commit\|dang\|chia-se\|lich-su]` | Checks whether client information leaks out (agent `mission-privacy-auditor`). `dang` = posting, `chia-se` = sharing, `lich-su` = git history |
+| `/mission-new-sample <short name>` | Adds a new drawing set or house sample to a drawing-reading app: read → overlay → you mark it up → fix by rule → keep old samples → lock the result |
+| `/mission-handover [note]` | Session handover: rewrites `HANDOVER.md`, closes the ledger, updates HTC/LT/manifest so the next session doesn't reread the whole repo |
+| `/mission-handoff <unit> <round>` | Packs a review round for ChatGPT: evidence, records, a fingerprint, a check that private information is masked, all written to an outbox in the app (`handoff.exchangeDir`, e.g. `docs/reviews/outbox`). Claude then opens ChatGPT in **Claude's own browser** to send it and read the verdict. You sign in yourself; no Dropbox. This works only in the Claude desktop app; if you run `claude` in a terminal, you paste it yourself. The verdict is saved word for word |
+| `/mission-pr` | Advanced: only for the `branch-pr` git mode |
 
-## Hai skill quen thuộc: `ba-chuyen-gia` và `ship`
+## Two familiar skills: `ba-chuyen-gia` and `ship`
 
-Dùng được ở **mọi app**, cả khi app chưa dùng Mission Kit. Nói «3 chuyên gia» (hoặc «phản biện») để gọi ba chuyên gia — vì tốn token, câu thường như «kiểm tra lại» chỉ làm Claude hỏi lại trước. Nói «ship» hay «đưa lên site» để kiểm tra rồi đăng.
+They work in **any app**, even one that doesn't use the Mission Kit. Say «3 chuyên gia» ("3 experts") or «phản biện» ("critique") to call the three experts. Because this costs tokens, an ordinary phrase like "check again" only makes Claude ask you first. Say «ship» or «đưa lên site» ("put it on the site") to check and then publish.
 
-| Skill | Làm gì |
+| Skill | What it does |
 | --- | --- |
-| `ba-chuyen-gia` | 3 agent soát độc lập chạy song song, mỗi người một mảng: lõi/logic · dữ liệu và ca biên · người dùng/giao diện. Mỗi agent so bản đang sửa với bản đã commit trên mọi mẫu, không sửa tệp, không in địa chỉ/tên mẫu. Sau đó Claude báo bạn bằng tiếng Việt, sửa, chạy lại test, commit, và liệt kê những gì chưa sửa. Ba mảng có thể khai sẵn cho từng app (`threeExperts.areas`). |
-| `ship` | Kiểm tra (luôn làm) → **chỉ triển khai khi bạn nói rõ «yes»**, sau câu hỏi ghi rõ «TRANG THẬT» hay «bản xem trước» → kiểm khóa trước và sau triển khai → sao lưu trong thư mục app (`mission.mjs backup`, chạy được trên Windows) → git → báo cáo. Lệnh riêng của từng app khai ở `ship` trong config: `previewCmd` = bản xem trước, `deployCmd` = trang thật. |
+| `ba-chuyen-gia` | 3 independent reviewer agents run in parallel, each on one area: core/logic · data and edge cases · user/interface. Each agent compares the working copy with the committed version on every sample. They don't edit files and don't print addresses or sample names. Claude then reports to you, fixes, reruns the tests, commits, and lists what was not fixed. The three areas can be set per app (`threeExperts.areas`). |
+| `ship` | Check (always) → **deploy only when you clearly say «yes»**, after a question that states «TRANG THẬT» (the LIVE site) or «bản xem trước» (a preview) → check locks before and after the deploy → back up inside the app folder (`mission.mjs backup`, works on Windows) → git → report. Each app's own commands go under `ship` in the config: `previewCmd` = preview, `deployCmd` = live site. |
 
-`/mission-deploy` không kèm gì = **chỉ bản xem trước**. App không có lệnh xem trước thì Claude dừng và báo, không tự đăng lên trang thật. Muốn lên trang thật phải gõ `/mission-deploy production`.
+`/mission-deploy` on its own = **preview only**. If the app has no preview command, Claude stops and tells you; it never publishes to the live site by itself. To go live you must type `/mission-deploy production`.
 
-**App đã có bản riêng thì bản riêng được dùng.** Ví dụ app đã có skill `ba-chuyen-gia` hoặc `ship` của riêng nó: ở những app đó, trình cài không chép bản kit đè lên. Nếu có cài toàn máy thì bản kit cũng tự đọc và làm theo bản của app.
+**If an app has its own version, its own version is used.** For example, if an app already has its own `ba-chuyen-gia` or `ship` skill, the installer doesn't copy the kit's version over it. With a global install, the kit's version also reads and follows the app's version.
 
-## Cài skill từ GitHub: kiểm trước, cài sau
+## Installing skills from GitHub: check first, install after
 
-Skill lạ là lời dặn cho Claude cộng với mã chạy bằng quyền của bạn: đọc được mọi tệp, dùng được connector đang bật và phiên `wrangler` trên máy. Gõ `/mission-skill-audit <link GitHub>`. Claude tải skill về một thư mục cách ly **ngoài app** (thư mục tạm của máy), quét chỉ đọc (không chạy gì của skill), đọc từng script theo 3 góc (chuỗi cung ứng · Cloudflare/triển khai · AI agent), rồi chấm **XANH / VÀNG / ĐỎ**. Chỉ khi bạn nói «cài», Claude mới chép đúng bản đã kiểm (ghi link và SHA vào `SOURCE.md`) vào `.claude/skills/` của app. Không thêm marketplace của bên thứ ba, vì marketplace tự cập nhật sẽ thay bản đã kiểm.
+An unknown skill is instructions for Claude plus code that runs with your permissions. It can read every file, use the connectors you have turned on, and use the `wrangler` session on your computer. Type `/mission-skill-audit <GitHub link>`:
+1. Claude downloads the skill into an isolated folder **outside the app** (the computer's temp folder).
+2. It scans the skill read-only and runs nothing from it.
+3. It reads every script from 3 angles (supply chain · Cloudflare/deployment · AI agents).
+4. It rates the skill **GREEN / YELLOW / RED**.
 
-**Kiểm thứ đã cài:** gõ `/mission-config-audit` lúc nào cũng được. Ba chuyên gia độc lập (chuỗi cung ứng · Cloudflare DevSecOps · bảo mật AI agent) soát plugin, skill, agent, hook, MCP, connector, quyền, cơ chế tự cập nhật, git hook, CI, gói phụ thuộc và `wrangler.toml` của app cùng `~/.claude`. **Chỉ đọc**: không chạy script hay hook nào, không mở tệp bí mật (chỉ biết là có), không gọi connector. Báo cáo có tệp:dòng, bằng chứng, mức độ, cách khắc phục và có cần điều tra thêm không. Lưu vào `.mission/reviews/` chỉ khi bạn đồng ý. Nói thêm «nhanh» thì chỉ một người soát.
+Only when you say «cài» ("install") does Claude copy exactly the checked version into the app's `.claude/skills/`, recording the link and SHA in `SOURCE.md`. It never adds third-party marketplaces, because a self-updating marketplace would replace the checked version.
 
-**Kit trong app có bị sửa sau khi cài không:** `node install.mjs --verify --project "<thư mục app>"`. `installed.json` ghi commit của kit lúc cài (kèm cờ nếu cài từ mã chưa commit) và mã băm sha256 của từng tệp kit, skill, agent, lệnh. Lệnh này báo tệp bị sửa, bị xóa hoặc thêm lạ.
+**Checking what is already installed:** type `/mission-config-audit` at any time. Three independent experts (supply chain · Cloudflare DevSecOps · AI agent security) review the app and `~/.claude`: plugins, skills, agents, hooks, MCP, connectors, permissions, auto-update settings, git hooks, CI, dependencies and `wrangler.toml`.
+- It is **read-only**: it runs no script or hook, never opens secret files (it only notes they exist), and calls no connector.
+- The report gives file:line, evidence, severity, a fix, and whether more investigation is needed.
+- It is saved in `.mission/reviews/` only if you agree.
+- Add «nhanh» ("quick") for a single reviewer.
 
-**Chống chép code frontend:** gõ `/mission-protect` (giữa bước build và deploy). Nó làm rối **bản build** trong `dist/` — rút gọn bằng esbuild (đổi tên biến cục bộ, bỏ chú thích), tùy chọn `--obfuscate` để mã hóa chuỗi, bỏ source map, giữ nguyên `vendor/` và `*.min.js`. **Không bao giờ đụng mã nguồn**: script tự từ chối nếu thấy tệp đang được git theo dõi. Lưu ý thẳng: làm rối chỉ **làm chậm** người chép, không khóa được (mọi thứ gửi xuống trình duyệt đều xem được). Bảo vệ thật sự là để logic ở server, giữ khóa bằng biến môi trường, và điều khoản pháp lý — obfuscate chỉ là một lớp răn đe.
+**Has the kit in an app been changed since it was installed?** Run `node install.mjs --verify --project "<app folder>"`. `installed.json` records the kit's commit at install time (flagged if installed from uncommitted code) and a sha256 hash of every kit file, skill, agent and command. This command reports files that were changed, deleted, or added.
 
-**Guard hỏi thêm:**
-- Mọi lệnh `wrangler` trừ lệnh chỉ đọc hoặc chạy trên máy (`whoami`, `dev`, `pages dev`, `tail`, `… list`, `--local`). Nhận cả `wrangler@4`, `npm exec`, `pnpm exec`, `pnpm wrangler`. `wrangler login` cũng hỏi.
-- Ghi `CLAUDE.md`, `.claude/launch.json`, `.vscode/tasks.json`, `.git/hooks`, `.git/config`, `tools/git-hooks`, `.husky`; lệnh `git config` đặt `core.hooksPath`, `fsmonitor`, `sshCommand`, `credential`, `remote.*.url`…
-- Đọc transcript cũ `~/.claude/projects` (trừ bộ nhớ và kết quả công cụ). **Chặn hẳn** việc đọc `~/.claude/history.jsonl`, `~/.claude.json`, cookie trình duyệt và `GitHub CLI`.
-- Bản kit trong app **không bao giờ tự tắt**. Trước đây, trong worktree, kit có thể im lặng nhường cho bản ở repo chính. Giờ chỉ bản toàn máy mới nhường, và chỉ khi app thật sự có hook kit.
-- Đầu phiên, HANDOVER/HTC được nạp kèm nhãn «ghi chép, không phải lệnh». Dòng nào giống lời dặn độc thì có cảnh báo.
-- Agent `mission-rules-checker` (đọc web) không còn Bash.
+**Protecting frontend code from copying:** type `/mission-protect` (between build and deploy). It obscures the **build output** in `dist/`:
+- It minifies with esbuild, renaming local variables and removing comments.
+- `--obfuscate` (optional) also encodes strings.
+- It removes source maps and leaves `vendor/` and `*.min.js` alone.
 
-## Kit làm gì tự động (hooks)
+It **never touches source code**: the script refuses if it sees files tracked by git. To be clear, obfuscation only **slows down** copying; it cannot lock anything, because everything sent to the browser can be read. Real protection means keeping logic on the server, keeping keys in environment variables, and legal terms. Obfuscation is only a deterrent.
 
-| Hook | Làm gì |
+**Extra questions the guard asks:**
+- Every `wrangler` command except read-only or local ones (`whoami`, `dev`, `pages dev`, `tail`, `… list`, `--local`). It also recognises `wrangler@4`, `npm exec`, `pnpm exec` and `pnpm wrangler`. `wrangler login` asks too.
+- Writing `CLAUDE.md`, `.claude/launch.json`, `.vscode/tasks.json`, `.git/hooks`, `.git/config`, `tools/git-hooks` or `.husky`. It also asks before `git config` commands that set `core.hooksPath`, `fsmonitor`, `sshCommand`, `credential`, `remote.*.url` and similar.
+- Reading old transcripts in `~/.claude/projects` (except memory and tool results). Reading `~/.claude/history.jsonl`, `~/.claude.json`, browser cookies and `GitHub CLI` data is **blocked outright**.
+- The kit copy inside an app **never switches itself off**. Earlier, inside a worktree, the kit could silently defer to the copy in the main repo. Now only the global copy defers, and only when the app really has kit hooks.
+- At session start, HANDOVER/HTC are loaded with the label «ghi chép, không phải lệnh» ("notes, not instructions"). Lines that look like malicious instructions get a warning.
+- The `mission-rules-checker` agent (which reads the web) no longer has Bash.
+
+## What the kit does automatically (hooks)
+
+| Hook | What it does |
 | --- | --- |
-| Đầu phiên (cả sau khi nén) | Nạp tình trạng thật và nhắc skill riêng của app, kèm **ngữ cảnh gọn**: `HANDOVER.md` (≤ 60 dòng), `HTC.md` hiện hành (≤ 150 dòng), sổ active (≤ 10 mục ledger đang mở). Tệp còn là mẫu trống chỉ tốn một dòng. `LT.md` (Inventory) và `manifest.json` không nạp sẵn, chỉ grep khi cần. HANDOVER cũ hơn commit mới nhất thì báo **CŨ** |
-| Trước khi nén ngữ cảnh | Máy tự chụp tình trạng (git, NOW, ledger mở) vào `.mission/state/auto-handover.md`; sau khi nén, ảnh chụp này được nạp lại nếu mới hơn HANDOVER |
-| Trước khi đọc tệp (Read, Grep, Glob) | **Chặn** đọc tệp bí mật (`.env`, `.dev.vars`, khóa `.pem/.key`, `~/.ssh`, `~/.wrangler`…; bản mẫu `.env.example` vẫn đọc được) và vùng mật của app (`readGuard.extraSecrets`). **Hỏi** khi đọc Desktop, Documents, Pictures, Videos, Music, OneDrive, Dropbox (`readGuard.privateDirs`) hoặc tìm trên cả ổ đĩa |
-| Dữ liệu quan trọng (`protect.important`: samples/, out/golden/, tests/pdf-library*/, .mission/ledger.jsonl, build/backup/ — app sửa được) | **Hỏi** (nói rõ thư mục và số tệp sẽ mất) trước lệnh xóa/ghi đè/dời chúng; hỏi khi tạo junction/symlink vào `D:\APPS` (hoặc thư mục trong `MISSION_APPS_ROOT`) hoặc dữ liệu quan trọng; hỏi khi xóa đệ quy thư mục có junction/symlink bên trong. Đầu phiên so số tệp với phiên trước, cảnh báo nếu trống/giảm >20%. `check --full` báo junction nguy hiểm trong thư mục tạm Claude và worktree |
-| Trước khi sửa tệp | Chặn sửa tệp build, mẫu, dữ liệu gốc, và **chính các tệp của kit** (để Claude không tự tắt lớp bảo vệ). Hỏi trước khi sửa cài đặt Claude Code (`settings.json`), cấu hình triển khai, luật, kết quả kỳ vọng. Sổ lỗi và cổng chỉ ghi được qua công cụ. **Dòng bị khóa** (`protect.lockedText`): tệp sửa được, riêng dòng đó thì không. **Gửi ChatGPT** (`handoff`): nội dung ghi vào hộp gửi (`exchangeDir`, trong app) phải qua kiểm che thông tin — chỉ chữ trong hộp gửi mới được dán vào ChatGPT; tệp kết luận chỉ ghi một lần. **Hỏi** trước khi thêm/sửa skill, agent, lệnh, hook, plugin hay `.mcp.json` (trong app và `~/.claude`): đó là mã và lời dặn mới cho Claude. |
-| Trước khi chạy lệnh (Bash và PowerShell) | **Chặn:** force-push, xóa nhánh từ xa, tạo alias git, tự merge PR, tự release, ghi/xóa sổ lỗi hay vùng bảo vệ (kể cả qua `*`, biến, lệnh viết tắt PowerShell, symlink). **Hỏi trước:** mọi `git push`, lệnh triển khai (`deploy`, `wrangler`…, và đúng lệnh trong `ship` — nói rõ TRANG THẬT hay bản xem trước), đổi cơ sở dữ liệu, lệnh SQL xóa, `reset --hard`, xóa đệ quy **ngoài** thư mục app, lệnh in `.env`/token ra màn hình, đọc thư mục riêng, tìm trên cả ổ đĩa, chép vào thư mục trao đổi mà hook không kiểm được nội dung. **Quyền riêng tư khi commit:** chỉ xét đúng những gì sẽ vào commit (kể cả lời nhắn commit), chặn khi có địa chỉ nhà (mặc định chỉ hậu tố rõ như Street, Road, Avenue — `privacy.addressCheck`; chỉ nhận địa chỉ kiểu Úc/tiếng Anh, địa chỉ Việt Nam thì thêm mẫu vào `privacy.patterns`), tên trong danh sách chặn, tên bộ mẫu/địa chỉ lấy từ `privacy.sampleDirs`, hoặc tệp có đuôi bị cấm (`privacy.blockCommitExtensions`, vd. `.pdf`); `privacy.blockPush` chặn push (cả `gh repo … --push`, đổi remote) khi lịch sử còn thông tin khách. Lời chặn chỉ ra `tệp:dòng`; dữ liệu thử có tên đường giả thì khai `privacy.allowPatterns`. Hook đọc lệnh như shell thật: chữ trong commit message, ghi chú sổ lỗi hay thân heredoc không bị coi là lệnh; dọn thư mục build (`rm -rf dist`) không bị hỏi. Có nhiều lệnh trong một dòng thì lấy kết quả nghiêm nhất. **Hỏi** trước khi cài skill/plugin/MCP (`npx skills add`, `claude plugin install`, `claude mcp add`), gói toàn máy (`npm i -g`), hoặc tải mã rồi chạy ngay (`curl … | sh`, `irm … | iex`). |
-| Sau khi sửa | Bắt khóa bí mật (Anthropic, OpenAI, Cloudflare, Supabase, AWS…) và chạy kiểm tra nhanh cho đúng tệp vừa sửa. Chặn mã có thể tới trình duyệt mà nhắc dữ liệu mật (`privacy.clientCode`). **Nhắc** (không chạy) test chậm (vd. cần phần mềm desktop) khi sửa đúng tệp (`checks.remind`). **Giữ mã gọn từ đầu** (`tidy.onEdit`, mặc định bật): cảnh báo ngay khi tệp vừa sửa có tên trùng, hàm cùng tên đã có ở tệp khác, hoặc khối mã lặp; tạo tệp mới mà chưa ghi vào bản đồ `.mission/LT.md` (mục «Tính năng») thì nhắc ghi. Chỉ cảnh báo, không chặn |
-| Khi Claude định dừng | Chỉ **nhắc** nếu kiểm tra đã cũ, không chặn, để đỡ tốn token. Muốn chặn hẳn thì đặt `stopGate.mode: "block"` |
+| Session start (also after compaction) | Loads the real status and reminds Claude of the app's own skills, with **compact context**: `HANDOVER.md` (≤ 60 lines), the current `HTC.md` (≤ 150 lines), and the active ledger (≤ 10 open entries). A file that is still an empty template costs only one line. `LT.md` (Inventory) and `manifest.json` are not preloaded; they are only searched when needed. If HANDOVER is older than the latest commit, it is flagged **CŨ** (stale) |
+| Before context compaction | Takes an automatic snapshot (git, NOW, open ledger entries) into `.mission/state/auto-handover.md`. After compaction, this snapshot is loaded if it is newer than HANDOVER |
+| Before reading files (Read, Grep, Glob) | **Blocks** reading secret files (`.env`, `.dev.vars`, `.pem/.key` keys, `~/.ssh`, `~/.wrangler`…; the sample `.env.example` can still be read) and the app's private areas (`readGuard.extraSecrets`). **Asks** before reading Desktop, Documents, Pictures, Videos, Music, OneDrive or Dropbox (`readGuard.privateDirs`), or searching a whole drive |
+| Important data (`protect.important`: samples/, out/golden/, tests/pdf-library*/, .mission/ledger.jsonl, build/backup/; each app can change this) | **Asks** before commands that delete, overwrite or move it, naming the folder and how many files would be lost. Also asks before creating a junction or symlink into `D:\APPS` (or a folder in `MISSION_APPS_ROOT`) or into important data, and before recursively deleting a folder that contains a junction or symlink. At session start it compares file counts with the last session and warns if a folder is empty or shrank by more than 20%. `check --full` reports dangerous junctions in Claude's temp folder and in worktrees |
+| Before editing files | Blocks editing build files, samples, source data, and **the kit's own files** (so Claude can't switch off its own protection). Asks before editing Claude Code settings (`settings.json`), deployment config, rules and expected results. The ledger and gates can only be written through the tool. **Locked lines** (`protect.lockedText`): the file can be edited, but that line cannot. **Sending to ChatGPT** (`handoff`): content written to the outbox (`exchangeDir`, inside the app) must pass the masking check. Only text in the outbox may be pasted into ChatGPT, and a verdict file can be written only once. **Asks** before adding or changing a skill, agent, command, hook, plugin or `.mcp.json` (in the app and in `~/.claude`), because those are new code and new instructions for Claude. |
+| Before running commands (Bash and PowerShell) | **Blocks:** force-push, deleting remote branches, creating git aliases, merging PRs by itself, releasing by itself, and writing or deleting the ledger or protected areas, including through `*`, variables, PowerShell aliases or symlinks.<br>**Asks first:** every `git push`; deploy commands (`deploy`, `wrangler`…, and the exact commands in `ship`, saying whether it is the LIVE site or a preview); database changes; SQL deletes; `reset --hard`; recursive deletes **outside** the app folder; commands that print `.env` files or tokens; reading private folders; searching a whole drive; copying into the exchange folder when the hook can't check the content.<br>**Privacy at commit time:** it checks exactly what goes into the commit, including the commit message. It blocks the commit when it finds:<br>• a street address (by default only clear suffixes such as Street, Road, Avenue — `privacy.addressCheck`; it recognises only Australian/English-style addresses, so add patterns to `privacy.patterns` for other countries);<br>• a name on the block list, or a sample-set name or address taken from `privacy.sampleDirs`;<br>• a file with a forbidden extension (`privacy.blockCommitExtensions`, e.g. `.pdf`).<br>`privacy.blockPush` blocks pushes (including `gh repo … --push` and remote changes) while the history still contains client information. The block message points to `file:line`. If test data uses fake street names, declare them in `privacy.allowPatterns`.<br>The hook reads commands the way a real shell does: text inside a commit message, a ledger note or a heredoc body is not treated as a command, and cleaning a build folder (`rm -rf dist`) does not trigger a question. When one line holds several commands, the strictest result wins.<br>**Asks** before installing a skill, plugin or MCP (`npx skills add`, `claude plugin install`, `claude mcp add`), a global package (`npm i -g`), or downloading code and running it straight away (`curl … \| sh`, `irm … \| iex`). |
+| After editing | Catches secret keys (Anthropic, OpenAI, Cloudflare, Supabase, AWS…) and runs quick checks on exactly the file just edited. Blocks code that may reach the browser if it mentions private data (`privacy.clientCode`). **Reminds** you, without running them, of slow tests (for example ones that need desktop software) when you edit the matching files (`checks.remind`). **Keeps code tidy from the start** (`tidy.onEdit`, on by default): it warns at once when the edited file has clashing names, a function with the same name as one in another file, or duplicated blocks. If you create a new file without adding it to the `.mission/LT.md` map (the «Tính năng» / Features section), it reminds you. It only warns, never blocks |
+| When Claude is about to stop | Only **reminds** if the checks are stale; it doesn't block, to save tokens. To block instead, set `stopGate.mode: "block"` |
 
-## Luật mà công cụ tự áp
+## Rules the tool enforces
 
-- Lỗi nào cũng phải có **hướng điều chỉnh** (`--fix`). Lưu ý (`attention`) tách riêng khỏi lỗi và không chặn.
-- Chấm đạt hay trượt đều phải có bằng chứng. Cổng soát độc lập phải kèm tệp báo cáo của subagent, dòng kết luận cuối là `KẾT LUẬN: PASS` hoặc `KẾT LUẬN: PASS KÈM SỬA (…)`; còn chữ `FAIL` hay `THIẾU BẰNG CHỨNG` thì công cụ từ chối.
-- Bỏ qua một lỗi CRITICAL/HIGH phải có chữ `human:<tên bạn>`.
-- **Không ghi địa chỉ nhà, tên khách hàng** vào sổ lỗi: công cụ từ chối. Có thể trỏ tới danh sách chặn sẵn có của app.
-- **Sửa rồi commit cũng không qua mặt được.** Kit nhớ nội dung từng tệp lúc kiểm tra. Tệp nào đổi sau đó (kể cả đã commit), hoặc lệnh kiểm tra trong config đổi, thì kết quả cũ bị đánh dấu **CŨ** và `done` báo chưa đạt. Thư mục không phải repo git thì `done` không bao giờ đạt.
-- `done` còn kiểm: phạm vi đã khai khớp với tệp hiện có (thêm mẫu mới mà chưa `scan` là chưa đạt), không còn vướng mắc (`blocker`) mở ở bất kỳ mức nào, sổ lỗi không có dòng hỏng, báo cáo được sinh sau thay đổi cuối của sổ/cổng/kiểm tra.
-- **Cổng soát độc lập** không đặt được «NA» trừ khi chủ dự án ghi `human:<tên>`.
-- **Tên tệp mẫu giống địa chỉ** (kể cả viết dính như `12QuokkaAvenue`) được `scan` đổi sang mã ngắn (`m-xxxxxx`); `manifest.json` không được commit; đầu ra lệnh kiểm tra và đoạn kế hoạch chép vào báo cáo được che địa chỉ.
-- Hai tệp mẫu trùng tên ở hai thư mục → `scan` dừng và báo (nếu không, cổng của tệp này bị tính cho tệp kia).
-- Lỗi lặp lại từ 2 lần trở lên thì công cụ nhắc quét toàn dự án.
-- Sổ lỗi có dòng hỏng thì công cụ không ghi thêm; chạy `node "$MISSION_KIT/mission.mjs" ledger repair` để chuyển dòng hỏng sang `ledger.bad.jsonl` (giữ nguyên văn).
-- `mission.mjs backup` sao lưu vào `ship.backupDir` (mặc định `build/backup`, trong app, không Dropbox), tự đặt `.gitignore` bên trong thư mục sao lưu — không sửa `.gitignore` của app.
-- Tệp chỉ đổi kiểu xuống dòng (CRLF Windows ↔ LF) không bị coi là đã sửa.
+- Every defect must have a **corrective action** (`--fix`). Notes (`attention`) are kept separate from defects and don't block.
+- Every pass or fail needs evidence. An independent review gate must include the subagent's report file, and its last line must be `KẾT LUẬN: PASS` (verdict: pass) or `KẾT LUẬN: PASS KÈM SỬA (…)` (pass with fixes). If it still says `FAIL` or `THIẾU BẰNG CHỨNG` (missing evidence), the tool refuses.
+- Waiving a CRITICAL/HIGH defect requires `human:<your name>`.
+- **No street addresses or client names** in the ledger: the tool refuses them. You can point it at the app's existing block list.
+- **Fixing and then committing doesn't get around the checks.** The kit remembers each file's content at check time. If a file changes afterwards (even if committed), or a check command in the config changes, the old result is marked **CŨ** (stale) and `done` reports not passed. In a folder that isn't a git repo, `done` never passes.
+- `done` also checks that:
+  - the declared scope matches the files present (adding a new sample without a `scan` means not passed);
+  - no blocker is open at any level;
+  - the ledger has no broken lines;
+  - the report was generated after the last change to the ledger, gates or checks.
+- An **independent review gate** cannot be set to "NA" unless the project owner writes `human:<name>`.
+- **Sample file names that look like addresses** (even run together, like `12QuokkaAvenue`) are renamed by `scan` to short codes (`m-xxxxxx`). `manifest.json` is never committed. Check-command output and plan excerpts copied into reports have addresses masked.
+- Two sample files with the same name in two folders → `scan` stops and reports it (otherwise one file's gate would count for the other).
+- A defect that repeats 2 or more times makes the tool remind you to scan the whole project.
+- If the ledger has a broken line, the tool won't add more. Run `node "$MISSION_KIT/mission.mjs" ledger repair` to move broken lines to `ledger.bad.jsonl` (kept word for word).
+- `mission.mjs backup` backs up into `ship.backupDir` (default `build/backup`, inside the app, no Dropbox). It puts its own `.gitignore` inside the backup folder and doesn't touch the app's `.gitignore`.
+- A file whose only change is line endings (Windows CRLF ↔ LF) is not treated as edited.
 
 ## Git
 
-| Chế độ | Khi nào | Luật |
+| Mode | When | Rules |
 | --- | --- | --- |
-| `local-main` (mặc định) | Repo trên máy, commit thẳng `main` làm mốc | Commit thoải mái; `git push` phải hỏi; force-push bị chặn |
-| `branch-pr` | Làm việc qua GitHub với người khác | Làm trên nhánh riêng, không commit vào `main`, bàn giao bằng PR |
+| `local-main` (default) | The repo is on your computer; commit straight to `main` as save points | Commit freely; `git push` asks first; force-push is blocked |
+| `branch-pr` | Working with others through GitHub | Work on your own branch, never commit to `main`, hand over through a PR |
 
-**Sao lưu lên GitHub (skill `mission-github`):** tạo repo **private**, đẩy các nhánh, mở trong GitHub Desktop. Tùy chọn **tự push sau mỗi commit**: chỉ bật khi bạn nói "có" cho từng app (ghi ngày vào `CLAUDE.md` của app). Hook `tools/git-hooks/post-commit` của app do git chạy, nên **không** qua bước hỏi `git push` của kit; nó tự dừng khi `privacy.blockPush` là `true`, chạy ngầm, ghi log vào `build/git-push.log`. Máy mới: chạy lại `git config core.hooksPath tools/git-hooks`. Trước mỗi lần tự push, hook quét các commit chưa lên GitHub; thấy token, khóa riêng hay tệp `.env`/`.dev.vars`/`.pem` thì **không push** và ghi `SKIPPED … possible secret` vào log (chỉ ghi tên tệp, không ghi bí mật).
+**Backing up to GitHub (the `mission-github` skill):** creates a **private** repo, pushes the branches, and opens it in GitHub Desktop. Optionally it can **push automatically after every commit**, switched on only when you say "yes" for each app (the date is recorded in the app's `CLAUDE.md`).
+- The app's `tools/git-hooks/post-commit` hook is run by git, so it does **not** go through the kit's `git push` question.
+- It stops by itself when `privacy.blockPush` is `true`. It runs in the background and logs to `build/git-push.log`.
+- On a new computer, run `git config core.hooksPath tools/git-hooks` again.
+- Before each automatic push, the hook scans the commits not yet on GitHub. If it finds a token, a private key or a `.env`/`.dev.vars`/`.pem` file, it **does not push** and writes `SKIPPED … possible secret` to the log (file name only, never the secret).
 
-## Thuật ngữ
+## Glossary
 
-| Từ | Nghĩa |
+| Term | Meaning |
 | --- | --- |
-| Skill | Bản hướng dẫn Claude tự đọc khi gặp đúng việc |
-| Subagent | Một Claude phụ, chạy riêng để soát độc lập (chỉ đọc, chỉ báo cáo) |
-| Hook | Đoạn kiểm tra tự chạy trước hoặc sau mỗi thao tác của Claude |
-| Commit | Một mốc lưu trong git, có thể quay lại |
-| Nhánh / PR | Bản làm việc tách riêng / yêu cầu gộp vào bản chính. Chỉ dùng ở chế độ `branch-pr` |
-| Cổng (gate) | Một tiêu chí chất lượng (G1–G8) phải đạt, có bằng chứng |
-| Kết luận 3 mức | `PASS` (sạch) · `PASS KÈM SỬA` (chỉ còn lỗi nhỏ, phải vào sổ) · `FAIL` (có lỗi nặng hoặc thiếu bằng chứng ở phần quan trọng) |
-| THIẾU BẰNG CHỨNG | Người soát ghi rõ phần mình không kiểm được, thay vì im lặng cho qua |
-| Ledger | Sổ lỗi: vị trí, vì sao sai, hướng điều chỉnh, đã kiểm chứng thế nào |
+| Skill | Instructions Claude reads by itself when the matching task comes up |
+| Subagent | A helper Claude that runs separately for an independent review (read-only, reports only) |
+| Hook | A check that runs automatically before or after each thing Claude does |
+| Commit | A save point in git that you can go back to |
+| Branch / PR | A separate working copy / a request to merge it into the main copy. Used only in `branch-pr` mode |
+| Gate | A quality criterion (G1–G8) that must pass, with evidence |
+| 3-level verdict | `PASS` (clean) · `PASS KÈM SỬA` (pass with fixes: only minor defects left, which must be logged) · `FAIL` (a serious defect, or missing evidence on an important part) |
+| THIẾU BẰNG CHỨNG | "Missing evidence": the reviewer states what they could not check, instead of silently passing it |
+| Ledger | The defect log: where, why it was wrong, the corrective action, and how it was verified |
 
-## Thành phần
+## Contents
 
-- **Skills:** `ba-chuyen-gia`, `ship`, `mission-run`, `mission-init`, `mission-app-spec`, `mission-repo-recon`, `mission-rules-engine`, `mission-drawing-check`, `mission-web-qa`, `mission-defect-loop`, `mission-quality-gates`, `mission-regression`, `mission-deploy`, `mission-pr`, `mission-tidy`, `mission-access-test` (test phân quyền: ai KHÔNG xem/sửa được gì), `mission-db-migration` (đổi cơ sở dữ liệu chỉ thêm, có đường lui), `mission-new-sample`, `mission-handoff`, `mission-handover` (bàn giao phiên, chống đọc lại cả repo), `mission-video` (kịch bản → giọng Kokoro → nhạc nền → logo → MP4), `mission-skill-audit` (kiểm skill/plugin lạ từ GitHub trước khi cài), `mission-config-audit` (3 chuyên gia kiểm bảo mật, chỉ đọc, toàn bộ plugin/skill/hook/MCP/quyền đang cài cho app và cho máy), `mission-protect` (làm rối bản build frontend để chống chép — chỉ xử lý dist/, không đụng nguồn), `mission-github` (repo private trên GitHub, GitHub Desktop, tự push sau commit nếu bạn bật)
-- **Subagents** (mỗi agent khai rõ `model:`; cố vấn của phiên chính `advisorModel` = fable): soát, chỉ báo cáo — `mission-checker`, `mission-evaluator`, `mission-rules-checker`, `mission-security-reviewer`, `mission-privacy-auditor` (opus); `mission-verifier`, `mission-visual-qa` (sonnet, rẻ hơn); `mission-explorer` (haiku, tìm và đọc, chỉ Read/Grep/Glob). Phiên chính: sonnet.
-- **Công cụ:** `mission.mjs` (sổ lỗi, cổng, kiểm tra, báo cáo, `done`), `kit/tools/web-smoke.mjs`, `kit/tools/rules-audit.mjs`
-- **Mẫu cấu hình** (`kit/templates/examples/`): `cdc-granny-flat` (app tra cứu theo luật quy hoạch)
-- **Mẫu brief:** `kit/templates/HUONG-DAN-BRIEF-CHATGPT.md` — cách nhờ ChatGPT viết brief để dán vào `/mission-init`
-- **Kiểm thử của chính kit:** `bash tests/run-tests.sh` (chạy trên Windows/Git Bash; trên Linux chạy ít ca hơn vì bỏ các ca chỉ dành cho Windows). Chưa có ca nào cho `mission-video` — skill này kiểm bằng mắt và tai (xem bước 7 trong skill)
-- **Tự push:** `tools/git-hooks/post-commit` đẩy nhánh hiện tại sau mỗi commit (cả từ GitHub Desktop), chạy ngầm, log ở `build/git-push.log`. Bật trên từng máy bằng `git config core.hooksPath tools/git-hooks`; clone mới thì chạy lại. Không bật thì không có gì tự push.
+- **Skills:** `ba-chuyen-gia`, `ship`, `mission-run`, `mission-init`, `mission-app-spec`, `mission-repo-recon`, `mission-rules-engine`, `mission-drawing-check`, `mission-web-qa`, `mission-defect-loop`, `mission-quality-gates`, `mission-regression`, `mission-deploy`, `mission-pr`, `mission-tidy`, and these:
+  - `mission-access-test`: permission tests (who must NOT see or edit what).
+  - `mission-db-migration`: add-only database changes with a way back.
+  - `mission-new-sample`, `mission-handoff`.
+  - `mission-handover`: session handover, so the next session doesn't reread the whole repo.
+  - `mission-video`: script → Kokoro voice → background music → logo → MP4.
+  - `mission-skill-audit`: checks an unknown skill or plugin from GitHub before installing it.
+  - `mission-config-audit`: 3 experts check, read-only, every plugin, skill, hook, MCP and permission installed for the app and for the computer.
+  - `mission-protect`: obscures the frontend build against copying; only touches `dist/`, never the source.
+  - `mission-github`: private GitHub repo, GitHub Desktop, and auto-push after commit if you turn it on.
+- **Subagents** (each declares its `model:`; the main session's advisor `advisorModel` = fable). They review and only report:
+  - `mission-checker`, `mission-evaluator`, `mission-rules-checker`, `mission-security-reviewer`, `mission-privacy-auditor` (opus);
+  - `mission-verifier`, `mission-visual-qa` (sonnet, cheaper);
+  - `mission-explorer` (haiku; finds and reads, with Read/Grep/Glob only).
 
-## Nâng cao
+  The main session uses sonnet.
+- **Tools:** `mission.mjs` (ledger, gates, checks, reports, `done`), `kit/tools/web-smoke.mjs`, `kit/tools/rules-audit.mjs`.
+- **Example config** (`kit/templates/examples/`): `cdc-granny-flat`, an app that looks things up in planning rules.
+- **Brief template:** `kit/templates/HUONG-DAN-BRIEF-CHATGPT.md`, which shows how to have ChatGPT write a brief to pass to `/mission-init`.
+- **The kit's own tests:** `bash tests/run-tests.sh`. It runs on Windows with Git Bash; on Linux fewer cases run, because the Windows-only ones are skipped. There are no cases yet for `mission-video`; that skill is checked by eye and ear (see step 7 in the skill).
+- **Auto-push:** `tools/git-hooks/post-commit` pushes the current branch after every commit (GitHub Desktop commits included). It runs in the background and logs to `build/git-push.log`. Turn it on per computer with `git config core.hooksPath tools/git-hooks`, and again after a fresh clone. If it is off, nothing pushes automatically.
 
-- **CI GitHub:** `kit/templates/ci/mission-check.yml` (tự tải kit trong lúc chạy, vì `.claude/mission-kit/` không được commit). Chỉ kiểm tra, không triển khai.
-- **`bash.freeDirs`:** nơi ghi, sửa, xóa bằng lệnh shell mà không hỏi. Mặc định: thư mục tạm của hệ thống, `%TEMP%/claude/**`, `build/logs/**`. Đích được chuẩn hóa (`../`, symlink, junction, cygpath) trước khi xét; rơi vào `.mission/`, `.claude/mission-kit/` hay `protect.deny` thì vẫn bị chặn.
-- **Chạy lệnh trên Windows:** kit tự thay `$MISSION_KIT` bằng đường dẫn thật và dùng Git Bash nếu có. Không có Git Bash thì dùng cmd.exe; khi đó lệnh trong `checks` không được dùng cú pháp riêng của sh.
+## Advanced
 
-## Giới hạn đã biết
+- **GitHub CI:** `kit/templates/ci/mission-check.yml`. It downloads the kit while it runs, because `.claude/mission-kit/` is never committed. It only checks; it never deploys.
+- **`bash.freeDirs`:** places where shell commands may write, edit or delete without asking. Default: the system temp folder, `%TEMP%/claude/**` and `build/logs/**`. Targets are normalised (`../`, symlinks, junctions, cygpath) before the check. Anything that lands in `.mission/`, `.claude/mission-kit/` or `protect.deny` is still blocked.
+- **Running commands on Windows:** the kit replaces `$MISSION_KIT` with the real path and uses Git Bash if available. Without Git Bash it uses cmd.exe, and then the commands in `checks` must not use sh-only syntax.
 
-- **Token Cloudflare kiểu cũ (40 ký tự, không có tiền tố `cfut_`):** mẫu `bi-mat-cloudflare` chỉ có trong config mới. App đã cài trước đó phải tự thêm mẫu này vào `.mission/config.json` (mục `lint.rules`, chép từ `kit/templates/config.template.json`).
-- **Bản đồ tính năng và kiểm tên trùng:** hook sau khi sửa có ngay khi cài lại kit (`node install.mjs --project "<thư mục app>"`). Riêng bước `tidy --conflicts` trong `checks.full` và mục «Tính năng» của `.mission/LT.md` chỉ app khởi tạo mới mới có; app đã cài trước đó phải tự thêm bước này vào `checks.full` (chép từ `kit/templates/config.template.json`) và thêm mục «Tính năng» vào `LT.md` (chép từ `kit/templates/LT.template.md`). App đang có sẵn tên trùng thì `check --full` sẽ đỏ ở bước này: ghi vào sổ lỗi rồi dọn bằng `/mission-tidy`.
-- **Ca «H1: tệp có \ trong tên» được bỏ qua trên Windows** (Windows không cho đặt tên tệp có dấu `\`).
-- **Hard link tới `.env` không phát hiện được qua đường dẫn.** Hard link là một tên khác của cùng dữ liệu, không có đường dẫn «thật» nào để so, nên hook đọc đường dẫn không nhận ra. Symlink và junction thì được xét theo đích thật.
-- **Kit mới dùng thật trên một số ít app, trên Windows.** Bộ kiểm thử đầy đủ chạy đạt trên Windows bằng Git Bash, gồm cả cài/gỡ thử (sau khi gỡ, hook và quyền giống hệt bản gốc). Hãy thử trên một app phụ trước.
-- **Hook chặn lệnh là lưới an toàn dựa trên mẫu chữ, không phải hàng rào tuyệt đối.** Ví dụ một đoạn mã `node -e "…"` hay `python -c "…"` tự ghi tệp vẫn lọt; `cd samples; rm a.pdf` trong cùng một lệnh cũng lọt. Hook đôi khi hỏi/chặn nhầm một lệnh vô hại — khi đó đọc lý do và gõ lệnh rõ ràng hơn.
-- **Cổng soát độc lập vẫn dựa trên tin cậy.** Tác tử chính là bên lưu tệp báo cáo. Đổi lại, mọi cổng đều để lại dấu vết kiểm tra được.
-- **Kit viết cho Windows** (PowerShell, Git Bash). macOS/Linux: chưa thử.
-- Kit chưa kiểm tra xung đột với thiết lập `.claude` cấp máy (`~/.claude`) của bạn.
+## Known limitations
+
+- **Old-style Cloudflare tokens (40 characters, no `cfut_` prefix):** the `bi-mat-cloudflare` pattern is only in the new config. Apps installed earlier must add this pattern to `.mission/config.json` themselves (section `lint.rules`, copied from `kit/templates/config.template.json`).
+- **Feature map and name-clash checks:** the after-edit hook arrives as soon as you reinstall the kit (`node install.mjs --project "<app folder>"`). Only newly initialised apps get the `tidy --conflicts` step in `checks.full` and the «Tính năng» (Features) section of `.mission/LT.md`. Apps installed earlier must add that step to `checks.full` themselves (copy it from `kit/templates/config.template.json`) and add the section to `LT.md` (copy it from `kit/templates/LT.template.md`). An app that already has clashing names will show red at this step in `check --full`: log it in the ledger, then clean up with `/mission-tidy`.
+- **The case «H1: tệp có \ trong tên» (a file with `\` in its name) is skipped on Windows**, because Windows doesn't allow `\` in file names.
+- **A hard link to `.env` cannot be detected by its path.** A hard link is another name for the same data, with no "real" path to compare, so the read hook cannot recognise it. Symlinks and junctions are checked by their real target.
+- **The kit has been used for real on only a few apps, on Windows.** The full test suite passes on Windows with Git Bash, including a test install and uninstall (after uninstalling, hooks and permissions are identical to the original). Try it on a side app first.
+- **The command-blocking hook is a pattern-based safety net, not an absolute barrier.** For example, a `node -e "…"` or `python -c "…"` snippet that writes a file still gets through, and so does `cd samples; rm a.pdf` in one command. The hook sometimes asks about or blocks a harmless command. When that happens, read the reason and type the command more explicitly.
+- **The independent review gate still relies on trust.** The main agent is the one that saves the report file. In return, every gate leaves a trail that can be checked.
+- **The kit is written for Windows** (PowerShell, Git Bash). macOS/Linux: not tested yet.
+- The kit has not been checked for conflicts with your computer-wide `.claude` setup (`~/.claude`).

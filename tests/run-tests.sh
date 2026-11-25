@@ -353,7 +353,7 @@ for cf in "$K/templates/config.template.json" "$K"/templates/examples/*.config.j
   echo 'const x = 1' > "$C3/c.js"
   expect_not "mã thường không bị block ($n3)" '"decision":"block"' "$(H post-edit-check "$(JCW "$C3" Write c.js)")"
 done
-expect "README nhắc app đã cài phải tự thêm mẫu" 'đã cài trước đó.*tự thêm' "$(cat "$KITSRC/README.md")"
+expect "README nhắc app đã cài phải tự thêm mẫu" 'đã cài trước đó.*tự thêm' "$(cat "$KITSRC/README.vi.md")"
 # ---MỐC-CA-MỚI---
 node -e 'const f=process.argv[1],c=JSON.parse(require("fs").readFileSync(f,"utf8"));c.git.mode="branch-pr";require("fs").writeFileSync(f,JSON.stringify(c,null,2))' "$P/.mission/config.json"
 
