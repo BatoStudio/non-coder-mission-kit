@@ -45,7 +45,7 @@ Có hai cách dùng:
    ```powershell
    git clone https://github.com/BatoStudio/non-coder-mission-kit "D:\APPS\_tools\non-coder-mission-kit"
    ```
-   (hoặc bấm **Code → Download ZIP** trên GitHub rồi giải nén). Các app của bạn không nằm ở `D:\APPS`? Đặt biến môi trường `MISSION_APPS_ROOT` (đường dẫn tuyệt đối, nhiều thư mục cách nhau bằng `;`; app nằm ngoài `D:\APPS` mà không đặt biến này thì kit không nhận ra đâu là thư mục app thật) để kit biết đâu là thư mục app thật.
+   (hoặc bấm **Code → Download ZIP** trên GitHub rồi giải nén vào `D:\APPS\_tools\`. Thư mục giải ra tên là `non-coder-mission-kit-main`: đổi tên thành `non-coder-mission-kit` cho khớp các lệnh bên dưới). Các app của bạn không nằm ở `D:\APPS`? Đặt biến môi trường `MISSION_APPS_ROOT` (đường dẫn tuyệt đối, nhiều thư mục cách nhau bằng `;`; app nằm ngoài `D:\APPS` mà không đặt biến này thì kit không nhận ra đâu là thư mục app thật) để kit biết đâu là thư mục app thật.
 2. Vẫn trong cửa sổ PowerShell đó, làm bước 3.
 3. Gõ lần lượt các lệnh (đổi tên app cho đúng; đường dẫn có dấu cách thì giữ nguyên dấu ngoặc kép):
    ```powershell
