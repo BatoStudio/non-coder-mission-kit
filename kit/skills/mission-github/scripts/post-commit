@@ -1,0 +1,54 @@
+#!/bin/sh
+# Mission Kit: after every commit, push the current branch to GitHub (private backup).
+# Copied into the app by the mission-github skill (tools/git-hooks/post-commit, tracked by git).
+# Turned on per PC by: git config core.hooksPath tools/git-hooks
+# Runs in the background so the commit never waits; output goes to build/git-push.log.
+# A failed push (no internet) does no harm: the commit stays on this PC and goes up with the next push.
+# Git runs this, not Claude, so the kit's "ask before git push" guard does not see it:
+# the owner turns it on once per app, and it stops by itself when privacy.blockPush is true
+# or when the commits about to go up look like they hold a secret (token, private key, .env file).
+
+branch=$(git symbolic-ref --short -q HEAD) || exit 0   # detached HEAD (rebase etc.): skip
+git remote get-url origin >/dev/null 2>&1 || exit 0     # no GitHub remote: skip
+
+top=$(git rev-parse --show-toplevel)
+mkdir -p "$top/build"
+log="$top/build/git-push.log"
+now() { date '+%Y-%m-%d %H:%M:%S'; }
+
+# Client data still in git history -> never push (plain grep: node may not be on PATH under GitHub Desktop).
+if grep -Eq '"blockPush"[[:space:]]*:[[:space:]]*true' "$top/.mission/config.json" 2>/dev/null; then
+  echo "== $(now) SKIPPED $branch: privacy.blockPush is true in .mission/config.json" >>"$log"
+  exit 0
+fi
+
+# Secret scan of every commit not yet on GitHub. Only commit + file names go to the log, never the secret itself.
+# A line that is a known false alarm can carry the marker  mission:allow-secret  (e.g. in a comment).
+SECRET_RE='-----BEGIN ([A-Z]+ )?PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{40,}|AKIA[0-9A-Z]{16}|sk-ant-[A-Za-z0-9_-]{20,}|sk-(proj-)?[A-Za-z0-9_-]{40,}|xox[abprs]-[A-Za-z0-9-]{10,}|AIza[0-9A-Za-z_-]{35}|sk_live_[0-9A-Za-z]{20,}|npm_[A-Za-z0-9]{36}|eyJ[A-Za-z0-9_-]{20,}\.eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}|(API_?TOKEN|API_?KEY|SECRET|PASSWORD|PASSWD|ACCESS_KEY|AUTH_TOKEN)[A-Za-z0-9_]*["'"'"']?[[:space:]]*[:=][[:space:]]*["'"'"'][A-Za-z0-9_/+=.-]{20,}["'"'"']'
+SECRET_FILE_RE='(^|[/ ])(\.env(\.[A-Za-z0-9_.-]+)?|\.dev\.vars(\.[A-Za-z0-9_.-]+)?|id_(rsa|dsa|ecdsa|ed25519)|[^/]*\.(pem|p12|pfx)|\.git-credentials|\.netrc|credentials\.json)$'
+# A file that matches by NAME but holds no secret (public certificate, sample) can be listed, one path per line,
+# in tools/git-hooks/allow-secret-files (tracked by git, so the decision is visible in review).
+allow="$top/tools/git-hooks/allow-secret-files"; [ -f "$allow" ] || allow=/dev/null
+scan() {
+  git -c core.quotePath=false log -p --no-color --no-ext-diff --format='commit %h' HEAD --not --remotes=origin 2>/dev/null |
+    awk '/^commit /{c=$2; next} /^\+\+\+ /{f=substr($0,7); next} /^\+/{print c "\t" f "\t" $0}' |
+    grep -v 'mission:allow-secret' | grep -E -- "$SECRET_RE" | cut -f1,2 | sort -u | head -n 10
+  git -c core.quotePath=false log --no-renames --diff-filter=AM --name-only --format='commit %h' HEAD --not --remotes=origin 2>/dev/null |
+    awk '/^commit /{c=$2; next} NF{print c " " $0}' |
+    grep -E -- "$SECRET_FILE_RE" | grep -Ev '\.(example|sample|template)$' |
+    awk 'FILENAME==ARGV[1]{sub(/\r$/,""); if($0!="") ok[$0]=1; next} !(substr($0, index($0," ")+1) in ok)' "$allow" - | sort -u | head -n 10
+}
+
+(
+  hits=$(scan)
+  if [ -n "$hits" ]; then
+    # one write, so a reader never sees the SKIPPED line without the list under it
+    printf '%s\n%s\n' "== $(now) SKIPPED $branch: possible secret in commits not yet on GitHub (remove it, or mark a false alarm with mission:allow-secret)" \
+      "$(printf '%s\n' "$hits" | sed 's/^/   commit /')"
+    exit 0
+  fi
+  echo "== $(now) push $branch"
+  git push -u origin "$branch" && echo "OK" || echo "FAILED (commit is safe on this PC; will go up next time)"
+) >>"$log" 2>&1 </dev/null &
+
+exit 0

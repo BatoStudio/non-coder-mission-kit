@@ -1,0 +1,295 @@
+{
+  "name": "ten-app",
+  "mainBranch": "main",
+  "protectedBranches": [
+    "main",
+    "master"
+  ],
+  "workBranchPrefix": "work/",
+  "git": {
+    "mode": "local-main"
+  },
+  "deliverables": [
+    {
+      "path": "index.html",
+      "description": "Bản app chạy được (sửa theo dự án)"
+    }
+  ],
+  "protect": {
+    "deny": [
+      "samples/**",
+      "reference/**"
+    ],
+    "ask": [
+      ".github/workflows/**",
+      "wrangler.toml",
+      "_headers",
+      "_redirects",
+      "supabase/migrations/**",
+      "package-lock.json"
+    ],
+    "lockedText": [],
+    "important": [
+      "samples/",
+      "out/golden/",
+      "tests/pdf-library*/",
+      ".mission/ledger.jsonl",
+      "build/backup/"
+    ]
+  },
+  "bash": {
+    "deny": [],
+    "ask": [],
+    "freeDirs": [
+      "%TEMP%/**",
+      "%TEMP%/claude/**",
+      "build/logs/**"
+    ]
+  },
+  "appSkills": {
+    "review": "ba-chuyen-gia",
+    "deploy": "ship"
+  },
+  "threeExperts": {
+    "_note": "Để trống = ba-chuyen-gia tự chia 3 mảng theo app. Muốn cố định thì chép _example vào areas và sửa đường dẫn/lệnh cho đúng app.",
+    "areas": [],
+    "_example": [
+      {
+        "name": "Lõi / logic",
+        "files": [
+          "src/engine/**"
+        ],
+        "focus": "luật bật nhầm, đơn vị, ngưỡng, hồi quy trên mẫu",
+        "commands": [
+          "npm test"
+        ]
+      },
+      {
+        "name": "Dữ liệu và ca biên",
+        "files": [
+          "src/io/**",
+          "samples/**"
+        ],
+        "focus": "đầu vào lạ/thiếu, mẫu khách hàng khác, dữ liệu cũ",
+        "commands": [
+          "npm test"
+        ]
+      },
+      {
+        "name": "Người dùng / giao diện",
+        "files": [
+          "index.html",
+          "src/ui/**"
+        ],
+        "focus": "giao diện 3 khổ, xuất tệp, lỗi console, có đáng dùng không",
+        "commands": [
+          "node \"$MISSION_KIT/tools/web-smoke.mjs\" index.html --out .mission/shots"
+        ]
+      }
+    ]
+  },
+  "ship": {
+    "checkCmd": "",
+    "previewCmd": "",
+    "deployCmd": "",
+    "siteUrl": "",
+    "lockChecks": [],
+    "tag": false,
+    "backupDir": "build/backup",
+    "backupFiles": []
+  },
+  "units": [
+    {
+      "name": "feature",
+      "list": [
+        "mo-du-an",
+        "nhap-pdf",
+        "kiem-tra",
+        "bao-cao",
+        "xuat-file"
+      ]
+    },
+    {
+      "name": "case",
+      "source": "samples/*.pdf",
+      "target": "tests/expected/*.json",
+      "pair": "sameName"
+    }
+  ],
+  "gates": [
+    {
+      "id": "G1",
+      "name": "Đúng yêu cầu (spec, Definition of Done)"
+    },
+    {
+      "id": "G2",
+      "name": "Đúng luật/quy chuẩn, có trích nguồn"
+    },
+    {
+      "id": "G3",
+      "name": "Chạy đúng với dự án thật của công ty"
+    },
+    {
+      "id": "G4",
+      "name": "Giao diện và trải nghiệm (3 khổ màn hình)"
+    },
+    {
+      "id": "G5",
+      "name": "Phân quyền và bảo mật (nội bộ / khách hàng)"
+    },
+    {
+      "id": "G6",
+      "name": "Dữ liệu một nguồn sự thật"
+    },
+    {
+      "id": "G7",
+      "name": "Kỹ thuật: không lỗi console, build, hiệu năng"
+    },
+    {
+      "id": "G8",
+      "name": "Phản biện độc lập — 3 chuyên gia (skill ba-chuyen-gia)"
+    }
+  ],
+  "independentGates": [
+    "G8"
+  ],
+  "severities": [
+    "CRITICAL",
+    "HIGH",
+    "MEDIUM",
+    "LOW"
+  ],
+  "blockingSeverities": [
+    "CRITICAL",
+    "HIGH"
+  ],
+  "checks": {
+    "onEdit": [],
+    "full": [
+      {
+        "name": "chạy thử trên trình duyệt",
+        "cmd": "node \"$MISSION_KIT/tools/web-smoke.mjs\" index.html",
+        "timeout": 180
+      },
+      {
+        "name": "lint",
+        "cmd": "node \"$MISSION_KIT/mission.mjs\" lint --all --summary"
+      },
+      {
+        "name": "tên trùng (xung đột)",
+        "cmd": "node \"$MISSION_KIT/mission.mjs\" tidy --conflicts"
+      }
+    ],
+    "remind": []
+  },
+  "lint": {
+    "rules": [
+      {
+        "id": "bi-mat",
+        "glob": [
+          "**/*.{html,js,mjs,cjs,ts,tsx,jsx,json,toml,py,sh,ps1,env}"
+        ],
+        "pattern": "(sk-(ant|proj)-[\\w-]{20,}|sk-[A-Za-z0-9]{32,}|sk_live_\\w{20,}|cf(ut|at)_\\w{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|AKIA[0-9A-Z]{16}|xox[bp]-[0-9A-Za-z-]{10,}|eyJ[\\w-]{10,}\\.eyJ[\\w-]{10,}\\.[\\w-]{10,}|service_role\\s*[:=]\\s*['\"][^'\"]{20,})",
+        "skipLinePattern": "^\\s*(//|#|\\*)",
+        "message": "Có vẻ là khóa bí mật trong mã — chuyển sang biến môi trường/secret",
+        "severity": "error"
+      },
+      {
+        "id": "bi-mat-cloudflare",
+        "glob": [
+          "**/*.{html,js,mjs,cjs,ts,tsx,jsx,json,toml,py,sh,ps1,env}"
+        ],
+        "pattern": "(CLOUDFLARE|CF)_[A-Z_]*(TOKEN|KEY|SECRET)\\s*[:=]\\s*[\"']?[A-Za-z0-9_-]{30,}",
+        "skipLinePattern": "^\\s*(//|#|\\*)",
+        "message": "Có vẻ là token Cloudflare trong mã — chuyển sang biến môi trường/secret",
+        "severity": "error"
+      },
+      {
+        "id": "console-log",
+        "glob": [
+          "**/*.{html,js,mjs,ts}"
+        ],
+        "pattern": "console\\.log\\(",
+        "message": "Còn console.log",
+        "severity": "warning"
+      },
+      {
+        "id": "todo",
+        "glob": [
+          "**/*.{html,js,mjs,ts,md}"
+        ],
+        "pattern": "\\b(TODO|FIXME|XXX)\\b",
+        "skipLinePattern": "^\\s*-\\s*\\[",
+        "message": "Còn TODO/FIXME",
+        "severity": "warning"
+      }
+    ]
+  },
+  "privacy": {
+    "patterns": [
+      "(?<![\\d.])(?:\\+61\\s?4|04)\\d{2}[\\s-]?\\d{3}[\\s-]?\\d{3}(?![\\d])",
+      "\\(0[2378]\\)\\s?\\d{4}\\s?\\d{4}",
+      "\\bLOT\\s+\\d+\\s+(?:IN\\s+)?DP\\s*\\d+"
+    ],
+    "denylistFiles": [],
+    "allowPatterns": [],
+    "sampleDirs": [],
+    "blockCommitExtensions": [],
+    "blockPush": false,
+    "clientCode": {
+      "_note": "identifiers = regex tên bảng/cột/khóa mật; mã có thể tới trình duyệt mà nhắc chúng thì bị chặn",
+      "identifiers": [],
+      "serverMarker": "",
+      "serverMarkerLabel": ""
+    },
+    "addressCheck": "strong",
+    "_note": "patterns mặc định: số di động Úc, số bàn (02)…, LOT n DP n. Email không chặn mặc định (dòng Co-Authored-By của commit có email). addressCheck: strong | all | off (app không có dữ liệu khách như game, cẩm nang công cộng → off)."
+  },
+  "review": {
+    "defaultAgents": 3,
+    "maxRounds": 3
+  },
+  "stopGate": {
+    "enabled": true,
+    "watch": [],
+    "mode": "remind"
+  },
+  "tidy": {
+    "_note": "Dùng cho /mission-tidy, cho hook sau khi sửa (onEdit: cảnh báo tên trùng / hàm đã có ở tệp khác / khối lặp dính tới tệp vừa sửa, nhắc ghi tệp mới vào .mission/LT.md; false = tắt) và cho bước check «tidy --conflicts». include = mã nguồn thật (không gồm bản build). sharedScope: mỗi phần tử là một nhóm tệp chạy chung phạm vi (build ghép tệp, hoặc nhiều <script> thường) — tên trùng trong nhóm là xung đột thật.",
+    "onEdit": true,
+    "include": [
+      "**/*.{js,mjs,cjs,ts,tsx,jsx,py,css}"
+    ],
+    "exclude": [],
+    "maxFileLines": 400,
+    "maxFuncLines": 80,
+    "minDupLines": 8,
+    "sharedScope": []
+  },
+  "readGuard": {
+    "_note": "Mặc định: chặn đọc tệp bí mật; hỏi khi đọc Desktop/Documents/Pictures/Videos/Music/OneDrive/Dropbox. extraPrivateDirs = cộng thêm thư mục riêng (hỏi); denyDirs = không bao giờ đọc; privateDirs = thay cả danh sách mặc định.",
+    "extraSecrets": [],
+    "extraPrivateDirs": [],
+    "denyDirs": [],
+    "allowDirs": [],
+    "outside": "allow"
+  },
+  "handoff": {
+    "_note": "Chỉ khi app gửi ChatGPT soát (/mission-handoff). exchangeDir = hộp gửi TRONG app, tương đối (vd. docs/reviews/outbox); Claude dán chữ trong đó vào ChatGPT bằng trình duyệt của Claude, không qua Dropbox. Để trống = tắt.",
+    "exchangeDir": "",
+    "verdictGlob": "",
+    "verdictSourceLine": "",
+    "blockAmounts": false,
+    "syntheticAmountsFile": ""
+  },
+  "samples": {
+    "_note": "Chỉ app đọc bản vẽ (/mission-new-sample). Lệnh dùng {file} (tên tệp trong dir) và {name} (tên ngắn).",
+    "dir": "",
+    "readCmd": "",
+    "overlayCmd": "",
+    "reviewCmd": "",
+    "checkCmds": [],
+    "expectedFile": "",
+    "historyFile": ""
+  }
+}

@@ -1,0 +1,48 @@
+# Mẫu GitHub Actions: chạy bộ kiểm tra đầy đủ của Mission Kit trên mọi PR.
+# Kit không nằm trong repo của app (.claude/mission-kit/ bị .gitignore), nên job tự tải kit về thư mục tạm.
+# Đặt biến repo MISSION_KIT_REPO (Settings → Variables) nếu bạn dùng bản fork của kit.
+# Chép vào .github/workflows/mission-check.yml. Chỉ kiểm tra, KHÔNG phát hành, KHÔNG đẩy commit.
+name: Mission check
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      MISSION_KIT: ${{ runner.temp }}/non-coder-mission-kit/kit
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # để so với nhánh chính và đọc lịch sử
+      - run: git fetch origin "${{ github.base_ref || 'main' }}:${{ github.base_ref || 'main' }}" || true
+      - name: Tải Mission Kit
+        run: git clone --depth 1 "${{ vars.MISSION_KIT_REPO || 'https://github.com/BatoStudio/non-coder-mission-kit' }}" "${{ runner.temp }}/non-coder-mission-kit"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Trình duyệt cho web-smoke
+        run: npm i --no-save playwright && npx playwright install --with-deps chromium
+      - name: Bộ kiểm tra đầy đủ
+        run: node "$MISSION_KIT/mission.mjs" check --full
+      - name: Báo cáo
+        if: always()
+        run: |
+          node "$MISSION_KIT/mission.mjs" report || true
+          node "$MISSION_KIT/mission.mjs" done || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mission-report
+          path: |
+            .mission/checks.md
+            .mission/progress.md
+            .mission/gates.md
+            .mission/ledger.md
+            dist/
+          if-no-files-found: ignore
