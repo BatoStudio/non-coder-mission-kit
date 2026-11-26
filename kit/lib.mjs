@@ -264,15 +264,21 @@ export function maskPrivate(root, cfg, text) {
   if (!text || typeof text !== 'string') return text;
   let t = text.normalize('NFC'); for (const [r, keep] of MASK_STEPS) t = maskAddress(t, r, keep);
   for (const p of cfg.privacy.patterns) { try { t = t.replace(new RegExp(p, 'gi'), '«ẩn»'); } catch {} }
-  for (const w of denyWords(root, cfg)) t = t.split(new RegExp(w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi')).join('«ẩn»');
+  // Che cả bản không dấu và bản có dấu nối/gạch/dính liền ("Nguyễn Văn" → "nguyen-van", "NguyenVan"), giống bộ kiểm bên dưới.
+  // Không đòi nguyên từ như bộ kiểm: tên trong tên tệp ("bao_gia_Nguyen.pdf") vẫn phải bị che.
+  for (const w of denyWords(root, cfg)) t = t.replace(new RegExp(denyBody(w), 'giu'), '«ẩn»');
   return t;
 }
 const foldDia = s => s.normalize('NFD').replace(/[đĐ]/g, 'd').replace(/\p{M}/gu, '').toLowerCase();
 const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // Mục trong danh sách chặn khớp theo NGUYÊN TỪ (không phân biệt dấu): "Mai" không bắt "main", "Hòa" không bắt "hoa don".
 // Chữ có dấu trong danh sách khớp đúng dấu đó HOẶC chữ không dấu ("Nguyễn" bắt "Nguyen"), nhưng không bắt dấu khác ("Hòa" không bắt "hóa").
+// Khoảng trắng giữa các từ của một mục khớp cả - _ / . hoặc dính liền: tên khách trong tên nhánh git ("work/nguyen-van") cũng bị bắt.
+const denyBody = w => String(w).normalize('NFC').trim().split(/\s+/)
+  .map(part => [...part].map(ch => { const b = foldDia(ch); return b && b !== ch.toLowerCase() ? `[${escRe(ch)}${escRe(b)}]` : escRe(ch); }).join(''))
+  .join('[\\s_/.-]*');
 export const denyWordRe = w => {
-  const body = [...String(w).normalize('NFC')].map(ch => { const b = foldDia(ch); return b && b !== ch.toLowerCase() ? `[${escRe(ch)}${escRe(b)}]` : escRe(ch); }).join('');
+  const body = denyBody(w);
   return new RegExp(`(?<![\\p{L}\\p{N}_])${body}(?![\\p{L}\\p{N}_])`, 'iu');
 };
 // Dựng bộ kiểm MỘT lần (đọc danh sách chặn, dựng regex) rồi dùng cho nhiều đoạn văn bản — nhanh khi quét cả nghìn dòng.

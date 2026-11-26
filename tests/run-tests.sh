@@ -1113,6 +1113,22 @@ expect_not "không còn hook của kit" "mission-kit" "$(cat .claude/settings.js
 expect_not "gỡ: .gitignore không còn dòng của kit" "Mission Kit" "$(cat .gitignore 2>/dev/null)"
 n=$(ls .claude/*.bak-* 2>/dev/null | wc -l); [ "$n" -le 2 ] && ok "không chất đống .bak ($n tệp)" || bad "còn $n tệp .bak"
 
+echo "## Che tên trong danh sách chặn: không dấu, viết hoa, tên nhánh git (tên bịa)"
+DM=$(mktemp -d); printf 'Hoàng Fakeo\nZebulon Quixtar\n' > "$DM/deny.txt"
+MASKD(){ node --input-type=module -e 'import { pathToFileURL as u } from "node:url"; const { maskPrivate, makePrivacyChecker } = await import(u(process.argv[1] + "/kit/lib.mjs").href); const cfg = { privacy: { patterns: [], denylistFiles: ["deny.txt"], allowPatterns: [] } }; console.log(process.argv[4] === "check" ? String(makePrivacyChecker(process.argv[2], cfg)(process.argv[3])) : maskPrivate(process.argv[2], cfg, process.argv[3]));' "$KITSRC" "$DM" "$1" "${2:-}" 2>&1; }
+dmask_is(){ local got; got=$(MASKD "$1"); if [ "$got" = "$2" ]; then ok "che «$1» → «$2»"; else bad "che «$1» — muốn «$2», nhận «$got»"; fi; }
+dmask_is "Hoàng Fakeo" "«ẩn»"
+dmask_is "khách Hoang Fakeo gọi" "khách «ẩn» gọi"
+dmask_is "HOANG FAKEO" "«ẩn»"
+dmask_is "Git: nhánh work/zebulon-quixtar @ abc123" "Git: nhánh work/«ẩn» @ abc123"
+dmask_is "ZebulonQuixtar" "«ẩn»"
+dmask_is "bao_gia_Hoang_Fakeo.pdf" "bao_gia_«ẩn».pdf"
+dmask_is "Hóang Fakeo" "Hóang Fakeo"
+expect "kiểm: tên nhánh có tên khách bị bắt" "danh sách chặn" "$(MASKD "work/zebulon-quixtar" check)"
+expect "kiểm: bản không dấu bị bắt" "danh sách chặn" "$(MASKD "Hoang Fakeo" check)"
+expect "kiểm: chữ thường không bị bắt oan" "null" "$(MASKD "hoa don cho khach" check)"
+rm -rf "$DM"
+
 echo; echo "KẾT QUẢ: $PASS đạt, $FAIL hỏng"
 rm -rf "$T"
 [ $FAIL = 0 ]
